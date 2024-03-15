@@ -17,4 +17,5 @@ Hardware-specific software — only for target platform, please set path to tool
 cmake -DPLATFORM_SDK_DIR=/path/to/hisilicon_sdk/ -DCMAKE_TOOLCHAIN_FILE=/path/to/openipc-firmware/output/host/share/buildroot/toolchainfile.cmake ../hisinad/
 ```
 
+test line
 
