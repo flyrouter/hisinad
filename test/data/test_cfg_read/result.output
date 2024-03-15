@@ -1,0 +1,33 @@
+[A]
+Syntax error at line 3, pos 3
+[A]
+[B]
+Syntax error at line 3, pos 2
+[A]
+Syntax error at line 3, pos 3
+[A]
+[B]
+[C]
+Syntax error at line 3, pos 8
+[A]
+a=7
+b=qewrcv
+Syntax error at line 4, pos 4
+[AAA]
+aaa=
+z=rrr
+a=56
+b=0x34
+c=4d
+Syntax error at line 8, pos 11
+[testing]
+fname=/tmp/test.txt
+fname2=/tmp/
+fname3=abc.txt
+Syntax error at line 5, pos 16
+[A]
+a=a b c
+b=b # @@@ cc&^$
+bb=17
+bbb=0x0
+Syntax error at line 6, pos 11

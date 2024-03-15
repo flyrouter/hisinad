@@ -1,0 +1,6 @@
+Error CFG_PROC_VALUE_BAD(-30) at line 6, pos 25
+Wrong value "BAYER_GBRGx" for isp_bayer
+Error CFG_PROC_WRONG_SECTION(-10) at line 8, pos 2
+Wrong section name [nonexist]
+Error CFG_PROC_VALUE_BAD(-30) at line 3, pos 17
+Wrong value "10x" for Isp_y

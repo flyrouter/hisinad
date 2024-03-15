@@ -1,0 +1,13 @@
+MPI_VENC_Init(): инитит 64 мутекса для 64 групп, они в g_stMpiVencChn
+
+HI_MPI_VENC_CreateGroup: на вид реализуема, не понятно что такое g_stMpiVencChn, g_stMpiGrp
+
+HI_MPI_VENC_CreateChn: 
+HI_MPI_SYS_Bind
+HI_MPI_VENC_RegisterChn
+HI_MPI_VENC_StartRecvPic
+HI_MPI_VENC_GetFd
+HI_MPI_VENC_Query
+HI_MPI_VENC_GetStream
+HI_MPI_VENC_ReleaseStream
+
