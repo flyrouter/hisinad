@@ -9,59 +9,11 @@
 #include <aux/logger.h>
 #include <cfg/sensor_config.h>
 #include <hitiny/hitiny_venc.h>
-
-int xhi_fd_mpi_sys = -1;
-
-typedef struct xhi_sys_bind_param_s
-{
-    MPP_CHN_S src;
-    MPP_CHN_S dest;
-} xhi_sys_bind_param_t;
-
-HI_S32  xxxHI_MPI_SYS_Bind(MPP_CHN_S *pstSrcChn, MPP_CHN_S *pstDestChn)
-{
-    if (xhi_fd_mpi_sys < 0)
-    {
-        xhi_fd_mpi_sys = open("/dev/sys", 2);
-        fprintf(stderr, "can't open /dev/sys, error %d (%s)\n", errno, strerror(errno));
-        if (xhi_fd_mpi_sys < 0) return 0xA0028010;
-    }
-
-    if (!pstSrcChn || !pstDestChn)
-    {
-        return 0xA0028006;
-    }
-
-    xhi_sys_bind_param_t param;
-    param.src = *pstSrcChn;
-    param.dest = *pstDestChn;
-
-    return ioctl(xhi_fd_mpi_sys, 0x40185907u, &param);
-}
-
-HI_S32  xxxHI_MPI_SYS_UnBind(MPP_CHN_S *pstSrcChn, MPP_CHN_S *pstDestChn)
-{
-    if (xhi_fd_mpi_sys < 0)
-    {
-        xhi_fd_mpi_sys = open("/dev/sys", 2);
-        fprintf(stderr, "can't open /dev/sys, error %d (%s)\n", errno, strerror(errno));
-        if (xhi_fd_mpi_sys < 0) return 0xA0028010;
-    }
-
-    if (!pstSrcChn || !pstDestChn)
-    {
-        return 0xA0028006;
-    }
-
-    xhi_sys_bind_param_t param;
-    param.src = *pstSrcChn;
-    param.dest = *pstDestChn;
-
-    return ioctl(xhi_fd_mpi_sys, 0x40185908u, &param);
-}
+#include <hitiny/hitiny_sys.h>
 
 void venc_jpeg_init_and_test()
 {
+    hitiny_MPI_VENC_DestroyGroup(0); // XXX
     int s32Ret = hitiny_MPI_VENC_CreateGroup(0); // XXX
     if (HI_SUCCESS != s32Ret)
     {
@@ -90,22 +42,10 @@ void venc_jpeg_init_and_test()
         return;
     }
 
-    {
-        MPP_CHN_S stSrcChn;
-        MPP_CHN_S stDestChn;
-        stSrcChn.enModId = HI_ID_VPSS;
-        stSrcChn.s32DevId = 0;
-        stSrcChn.s32ChnId = 2; // Which channel to use for jpeg?
-
-        stDestChn.enModId = HI_ID_GROUP;
-        stDestChn.s32DevId = 0;
-        stDestChn.s32ChnId = 0;
-
-        s32Ret = xxxHI_MPI_SYS_Bind(&stSrcChn, &stDestChn);
-        if (HI_SUCCESS != s32Ret) {
-            log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
-            return;
-        }
+    s32Ret = hitiny_sys_bind_VPSS_GROUP(0, 2, 0, 0);
+    if (HI_SUCCESS != s32Ret) {
+        log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
+        return;
     }
 
     s32Ret = hitiny_MPI_VENC_RegisterChn(0, 0);
@@ -217,22 +157,10 @@ printf("TAKE!\n");
         return;
     }
 
-    {
-        MPP_CHN_S stSrcChn;
-        MPP_CHN_S stDestChn;
-        stSrcChn.enModId = HI_ID_VPSS;
-        stSrcChn.s32DevId = 0;
-        stSrcChn.s32ChnId = 2; // Which channel to use for jpeg?
-
-        stDestChn.enModId = HI_ID_GROUP;
-        stDestChn.s32DevId = 0;
-        stDestChn.s32ChnId = 0;
-
-        s32Ret = xxxHI_MPI_SYS_UnBind(&stSrcChn, &stDestChn);
-        if (HI_SUCCESS != s32Ret) {
-            log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
-            return;
-        }
+    s32Ret = hitiny_sys_unbind_VPSS_GROUP(0, 2, 0, 0);
+    if (HI_SUCCESS != s32Ret) {
+        log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
+        return;
     }
 
     s32Ret = hitiny_MPI_VENC_UnRegisterChn(0);
