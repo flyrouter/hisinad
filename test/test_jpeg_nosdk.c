@@ -42,7 +42,7 @@ void venc_jpeg_init_and_test()
         return;
     }
 
-    s32Ret = hitiny_sys_bind_VPSS_GROUP(0, 2, 0, 0);
+    s32Ret = hitiny_sys_bind_VPSS_GROUP(0, 0, 0, 0);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
         return;
@@ -57,6 +57,24 @@ void venc_jpeg_init_and_test()
 printf("wait for camera 3 sec...\n");
 sleep(3);
 printf("TAKE!\n");
+
+    s32Ret = hitiny_MPI_VENC_SetColor2GreyConf(
+        &(GROUP_COLOR2GREY_CONF_S){ .bEnable = HI_TRUE, .u32MaxWidth = 1280, .u32MaxHeight = 720 }
+    );
+    if (HI_SUCCESS != s32Ret) {
+        log_error("%d: HI_MPI_VENC_SetColor2GreyConf failed with %#x!", __LINE__, s32Ret);
+        return;
+    }
+
+    s32Ret = hitiny_MPI_VENC_SetGrpColor2Grey(
+        0, // grp id
+        &(GROUP_COLOR2GREY_S){ .bColor2Grey = HI_TRUE }
+    );
+    if (HI_SUCCESS != s32Ret) {
+        log_error("%d: 0 HI_MPI_VENC_SetGrpColor2Grey failed with %#x!", __LINE__, s32Ret);
+        return;
+    }
+    sleep(10);
 
     s32Ret = hitiny_MPI_VENC_StartRecvPic(0);
     if (HI_SUCCESS != s32Ret) {
@@ -80,8 +98,32 @@ printf("TAKE!\n");
     FD_SET(s32VencFd, &read_fds);
 
     printf("AAAAAAAAAAAAAAAAAAAA\n");
-    TimeoutVal.tv_sec  = 20;
+    TimeoutVal.tv_sec  = 1;
     TimeoutVal.tv_usec = 0;
+
+unsigned CNT = 5;
+while (CNT--)
+{
+    s32Ret = select(s32VencFd+1, &read_fds, NULL, NULL, &TimeoutVal);
+    printf("snap %s (%u)\n", s32Ret > 0 ? "GOOD" : "FAILED", CNT);
+    if (s32Ret > 0)
+    {
+        s32Ret = hitiny_MPI_VENC_Query(0, &stStat);
+        stStream.pstPack = (VENC_PACK_S*)malloc(sizeof(VENC_PACK_S) * stStat.u32CurPacks);
+        stStream.u32PackCount = stStat.u32CurPacks;
+        hitiny_MPI_VENC_GetStream(0, &stStream, HI_FALSE);
+                VENC_PACK_S*  pstData;
+                for (unsigned iii = 0; iii < stStream.u32PackCount; iii++)
+                {
+                    pstData = &(stStream.pstPack[iii]);
+                    printf("\t skipping %u and %u bytes\n", pstData->u32Len[0], pstData->u32Len[1]);
+                }
+
+        hitiny_MPI_VENC_ReleaseStream(0, &stStream);
+        free(stStream.pstPack);
+        stStream.pstPack = NULL;
+    }
+}
 
     s32Ret = select(s32VencFd+1, &read_fds, NULL, NULL, &TimeoutVal);
     if (s32Ret < 0)
@@ -151,13 +193,22 @@ printf("TAKE!\n");
         }
     }
 
+    s32Ret = hitiny_MPI_VENC_SetGrpColor2Grey(
+        0, // grp id
+        &(GROUP_COLOR2GREY_S){ .bColor2Grey = HI_FALSE }
+    );
+    if (HI_SUCCESS != s32Ret) {
+        log_error("%d: 0 HI_MPI_VENC_SetGrpColor2Grey failed with %#x!", __LINE__, s32Ret);
+        return;
+    }
+
     s32Ret = hitiny_MPI_VENC_StopRecvPic(0);
     if (HI_SUCCESS != s32Ret) {
         printf("HI_MPI_VENC_StopRecvPic failed with %#x!\n", s32Ret);
         return;
     }
 
-    s32Ret = hitiny_sys_unbind_VPSS_GROUP(0, 2, 0, 0);
+    s32Ret = hitiny_sys_unbind_VPSS_GROUP(0, 0, 0, 0);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
         return;

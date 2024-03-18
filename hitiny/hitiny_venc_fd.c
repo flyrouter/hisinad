@@ -112,7 +112,6 @@ static int open_grp_fd(VENC_GRP VeGrp)
         return -1;
     }
 
-
     return _new_grp_fd;
 }
 
@@ -278,6 +277,73 @@ int hitiny_MPI_VENC_Query(VENC_CHN VeChn, VENC_CHN_STAT_S *pstStat)
     if (fd < 0) return fd;
 
     return ioctl(fd, 0x801C450E, pstStat);
+}
+
+static int open_all_grp_fd()
+{
+    char fname[32];
+    struct stat stat_buf;
+    snprintf(fname, 32, "/dev/grp");
+    if (stat(fname, &stat_buf) < 0)
+    {
+        log_error("ERROR: can't stat() on '%s', %d (%s)", fname, errno, strerror(errno));
+        return -1;
+    }
+
+    if ((stat_buf.st_mode & 0xF000) != 0x2000)
+    {
+        log_error("ERROR: %s is not a device", fname);
+        return -1;
+    }
+
+    int _new_grp_fd = open(fname, 2, 0);
+    if (_new_grp_fd < 0)
+    {
+        log_error("ERROR: can't open() on '%s', %d (%s)", fname, errno, strerror(errno));
+        return -1;
+    }
+
+    return _new_grp_fd;
+}
+
+int hitiny_MPI_VENC_SetColor2GreyConf(const GROUP_COLOR2GREY_CONF_S *pstGrpColor2GreyConf)
+{
+    if (!pstGrpColor2GreyConf)
+    {
+        log_error("ERROR: pstGrpColor2GreyConf is NULL");
+        return 0xA0078006;
+    }
+
+    int fd = open_all_grp_fd();
+    if (fd < 0) return fd;
+
+    int ret = ioctl(fd, 0x400C4708, pstGrpColor2GreyConf);
+
+    close(fd);
+    return ret;
+}
+
+int hitiny_MPI_VENC_SetGrpColor2Grey(VENC_GRP VeGrp, const GROUP_COLOR2GREY_S *pstGrpColor2Grey)
+{
+    if (VeGrp >= VENC_MAX_GRP_NUM) return 0xA0078001;
+
+    if (!pstGrpColor2Grey)
+    {
+        log_error("ERROR: pstGrpColor2GreyConf is NULL");
+        return 0xA0078006;
+    }
+
+    int fd = g_hitiny_fd_grp[VeGrp];
+
+    if (fd < 0)
+    {
+        fd = open_grp_fd(VeGrp);
+        g_hitiny_fd_grp[VeGrp] = fd;
+    }
+
+    if (fd < 0) return fd;
+
+    return ioctl(fd, 0x40044706, pstGrpColor2Grey);
 }
 
 int hitiny_MPI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
