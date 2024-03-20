@@ -49,6 +49,8 @@ target_link_libraries(test_jpeg_nosdk hisinad_aux)
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
+add_executable(tools_hi_vi_reg tools/hi_vireg.c)
+
 add_library(sns_imx225_i2c_update SHARED imx225_i2c/imx225_cmos.c imx225_i2c/imx225_sensor_ctl.c)
 
 add_executable(sample_audio test/sample_audio/sample_audio.c test/sample_audio/sample_comm_audio.c test/sample_audio/sample_comm_sys.c platform/sdk_ugly.c)
