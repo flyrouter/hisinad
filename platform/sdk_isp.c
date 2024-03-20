@@ -96,6 +96,9 @@ int sdk_isp_init(const struct SensorConfig* sc)
     log_info("ExpTime in [%u, %u]", stAEAttr.u16ExpTimeMin, stAEAttr.u16ExpTimeMax);
     log_info("AGain in [%u, %u]", stAEAttr.u16AGainMin, stAEAttr.u16AGainMax);
     log_info("DGain in [%u, %u]", stAEAttr.u16DGainMin, stAEAttr.u16DGainMax);
+    log_info("ExpTime in [%u, %u]", stAEAttr.u16ExpTimeMin, stAEAttr.u16ExpTimeMax);
+    log_info("AGain in [%u, %u]", stAEAttr.u16AGainMin, stAEAttr.u16AGainMax);
+    log_info("DGain in [%u, %u]", stAEAttr.u16DGainMin, stAEAttr.u16DGainMax);
     s32Ret = HI_MPI_ISP_SetAEAttr(&stAEAttr);
     if (HI_SUCCESS != s32Ret) {
         log_crit("HI_MPI_ISP_SetAEAttr failed with %#x!", s32Ret);
@@ -270,7 +273,7 @@ int sdk_vpss_init(const struct SensorConfig* sc)
     }
 
     log_info("VPSS bind start");
-    for (unsigned chi = 1; chi <= 2; ++chi)
+    for (unsigned chi = 0; chi <= 2; ++chi)
     {
         log_info("EnableChn(0, %u)\n", chi);
         s32Ret = HI_MPI_VPSS_EnableChn(0, chi);
@@ -289,7 +292,7 @@ int sdk_vpss_init(const struct SensorConfig* sc)
     MPP_CHN_S dest_chn = {
         .enModId = HI_ID_VPSS,
         .s32DevId = 0,
-        .s32ChnId = 2,
+        .s32ChnId = 0,
     };
     s32Ret = HI_MPI_SYS_Bind(&src_chn, &dest_chn);
     if (HI_SUCCESS != s32Ret)
