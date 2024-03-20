@@ -390,7 +390,9 @@ int hitiny_MPI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
         return ret;
     }
 
-    printf("YOYOYO: 0x%08x 0x%08x 0x%08x;", param_ret[0], param_ret[1], param_ret[2]);
+#ifdef __STREAM_BUF_DBG__
+    log_info("YOYOYO: 0x%08x 0x%08x 0x%08x;", param_ret[0], param_ret[1], param_ret[2]);
+#endif //__STREAM_BUF_DBG__
 
     g_hitiny_venc_chn[VeChn].base_phy = param_ret[0];
     g_hitiny_venc_chn[VeChn].base_virtual = param_ret[1];
