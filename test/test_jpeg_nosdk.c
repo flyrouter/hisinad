@@ -11,10 +11,25 @@
 #include <hitiny/hitiny_venc.h>
 #include <hitiny/hitiny_sys.h>
 
+#include <sys/time.h>
+
+long long prev_milliseconds = 0;
+
+void print_time(const char * s)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long long milliseconds = tv.tv_sec * 1000000LL + tv.tv_usec;
+    printf("TIME: %lld (diff %lld) %s\n", milliseconds, milliseconds - prev_milliseconds, s);
+    prev_milliseconds = milliseconds;
+}
+
 void venc_jpeg_init_and_test()
 {
+    print_time("START");
     hitiny_MPI_VENC_DestroyGroup(0); // XXX
     int s32Ret = hitiny_MPI_VENC_CreateGroup(0); // XXX
+    print_time("AFTER hitiny_MPI_VENC_CreateGroup");
     if (HI_SUCCESS != s32Ret)
     {
         log_error("HI_MPI_VENC_CreateGroup failed with %#x!", s32Ret);
@@ -36,6 +51,7 @@ void venc_jpeg_init_and_test()
     stJpegAttr.u32Priority = 0;/*channels precedence level*/
     memcpy(&stVencChnAttr.stVeAttr.stAttrJpeg, &stJpegAttr, sizeof(VENC_ATTR_JPEG_S));
 
+    print_time("BEFORE hitiny_MPI_VENC_CreateChn");
     s32Ret = hitiny_MPI_VENC_CreateChn(0, &stVencChnAttr);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_VENC_CreateChn failed with %#x!", s32Ret);
@@ -53,6 +69,7 @@ void venc_jpeg_init_and_test()
         log_error("HI_MPI_VENC_RegisterChn failed with %#x!", s32Ret);
         return;
     }
+    print_time("AFTER HI_MPI_VENC_RegisterChn");
 
 printf("wait for camera 3 sec...\n");
 sleep(3);
@@ -98,10 +115,10 @@ printf("TAKE!\n");
     FD_SET(s32VencFd, &read_fds);
 
     printf("AAAAAAAAAAAAAAAAAAAA\n");
-    TimeoutVal.tv_sec  = 1;
+    TimeoutVal.tv_sec  = 10;
     TimeoutVal.tv_usec = 0;
 
-unsigned CNT = 5;
+unsigned CNT = 2;
 while (CNT--)
 {
     s32Ret = select(s32VencFd+1, &read_fds, NULL, NULL, &TimeoutVal);
@@ -129,12 +146,10 @@ while (CNT--)
     if (s32Ret < 0)
     {
         printf("snap select failed!\n");
-        return;
     }
     else if (0 == s32Ret)
     {
         printf("snap time out!\n");
-        return;
     }
     else
     {
