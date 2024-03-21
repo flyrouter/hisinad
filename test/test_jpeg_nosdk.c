@@ -58,7 +58,7 @@ void venc_jpeg_init_and_test()
         return;
     }
 
-    s32Ret = hitiny_sys_bind_VPSS_GROUP(0, 0, 0, 0);
+    s32Ret = hitiny_sys_bind_VPSS_GROUP(0, 0, 0);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
         return;
@@ -223,7 +223,7 @@ while (CNT--)
         return;
     }
 
-    s32Ret = hitiny_sys_unbind_VPSS_GROUP(0, 0, 0, 0);
+    s32Ret = hitiny_sys_unbind_VPSS_GROUP(0, 0, 0);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_SYS_Bind VPSS to GROUP failed with %#x!", s32Ret);
         return;

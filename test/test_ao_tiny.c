@@ -168,7 +168,7 @@ int main(int argc, char** argv)
         log_error("Error %d: %s", errno, strerror(errno));
     }
 
-    hitiny_MPY_SYS_Done();
+    hitiny_MPI_SYS_Done();
 
     return 0;
 }
