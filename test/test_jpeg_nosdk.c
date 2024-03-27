@@ -24,7 +24,7 @@ void print_time(const char * s)
     prev_milliseconds = milliseconds;
 }
 
-void venc_jpeg_init_and_test()
+void venc_jpeg_init_and_test(unsigned width, unsigned height, const char* fname, unsigned color)
 {
     print_time("START");
     hitiny_MPI_VENC_DestroyGroup(0); // XXX
@@ -41,11 +41,11 @@ void venc_jpeg_init_and_test()
 
     stVencChnAttr.stVeAttr.enType = PT_JPEG;
 
-    stJpegAttr.u32MaxPicWidth  = 1280;
-    stJpegAttr.u32MaxPicHeight = 720;
-    stJpegAttr.u32PicWidth  = 1280;
-    stJpegAttr.u32PicHeight = 720;
-    stJpegAttr.u32BufSize = 1280 * 720 * 2;
+    stJpegAttr.u32MaxPicWidth  = width;
+    stJpegAttr.u32MaxPicHeight = height;
+    stJpegAttr.u32PicWidth  = width;
+    stJpegAttr.u32PicHeight = height;
+    stJpegAttr.u32BufSize = width * height * 2;
     stJpegAttr.bByFrame = HI_TRUE;/*get stream mode is field mode  or frame mode*/
     stJpegAttr.bVIField = HI_FALSE;/*the sign of the VI picture is field or frame?*/
     stJpegAttr.u32Priority = 0;/*channels precedence level*/
@@ -76,22 +76,20 @@ sleep(3);
 printf("TAKE!\n");
 
     s32Ret = hitiny_MPI_VENC_SetColor2GreyConf(
-        &(GROUP_COLOR2GREY_CONF_S){ .bEnable = HI_TRUE, .u32MaxWidth = 1280, .u32MaxHeight = 720 }
+        &(GROUP_COLOR2GREY_CONF_S){ .bEnable = HI_TRUE, .u32MaxWidth = width, .u32MaxHeight = height }
     );
     if (HI_SUCCESS != s32Ret) {
         log_error("%d: HI_MPI_VENC_SetColor2GreyConf failed with %#x!", __LINE__, s32Ret);
-        return;
     }
 
     s32Ret = hitiny_MPI_VENC_SetGrpColor2Grey(
         0, // grp id
-        &(GROUP_COLOR2GREY_S){ .bColor2Grey = HI_TRUE }
+        &(GROUP_COLOR2GREY_S){ .bColor2Grey = color? HI_FALSE : HI_TRUE }
     );
     if (HI_SUCCESS != s32Ret) {
         log_error("%d: 0 HI_MPI_VENC_SetGrpColor2Grey failed with %#x!", __LINE__, s32Ret);
-        return;
     }
-    sleep(10);
+    sleep(5);
 
     s32Ret = hitiny_MPI_VENC_StartRecvPic(0);
     if (HI_SUCCESS != s32Ret) {
@@ -179,7 +177,8 @@ while (CNT--)
                 return;
             }
 
-            FILE* FU = fopen("snap.jpg", "wb");
+            FILE* FU = fopen(fname, "wb");
+            if (FU)
             {
                 VENC_PACK_S*  pstData;
                 for (unsigned iii = 0; iii < stStream.u32PackCount; iii++)
@@ -189,6 +188,10 @@ while (CNT--)
                     fwrite(pstData->pu8Addr[0], pstData->u32Len[0], 1, FU);
                     fwrite(pstData->pu8Addr[1], pstData->u32Len[1], 1, FU);
                 }
+            }
+            else
+            {
+                fprintf(stderr, "Can't open %s for writing!\n", fname);
             }
             fclose(FU);
 
@@ -249,18 +252,47 @@ while (CNT--)
     }
 }
 
+void usage(int argc, char** argv, const char* err)
+{
+    fprintf(stderr, "Usage: %s filename.jpeg WIDTH HEIGHT [COLOR/BW]\n", argv[0]);
+    if (err) fprintf(stderr, "ERROR: %s\n", err);
+    exit(-1);
+}
 
 int main(int argc, char** argv)
 {
+    if (argc < 4) usage(argc, argv, 0);
+
+    unsigned width = strtoul(argv[2], 0, 10);
+    if (width < 160 || width > 1920) usage(argc, argv, "WIDTH should be in [160, 1920]");
+
+    unsigned height = strtoul(argv[3], 0, 10);
+    if (height < 120 || height > 1200) usage(argc, argv, "HEIGHT should be in [160, 1200]");
+
+    unsigned color = 1;
+    if (argc > 4)
+    {
+        if (strcasecmp(argv[4], "COLOR") != 0)
+        {
+            if (!strcasecmp(argv[4], "BW"))
+            {
+                color = 0;
+            }
+            else
+            {
+                usage(argc, argv, "COLOR or BW param, or leave empty");
+            }
+        }
+    }
+
+    fprintf(stderr, "going to get %s %ux%u image\n", color ? "color" : "bw", width, height);
+
     hitiny_MPI_VENC_Init();
 
-    venc_jpeg_init_and_test();
+    venc_jpeg_init_and_test(width, height, argv[1], color);
 
     hitiny_MPI_VENC_Done();
         
     return 0;
 }
-
-
-
 
