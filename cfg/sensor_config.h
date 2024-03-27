@@ -109,6 +109,15 @@ struct SensorVIChn {
     int frame_rate;
 };
 
+struct SensorVIExt {
+    unsigned int width;
+    unsigned int height;
+    PIXEL_FORMAT_E pix_format;
+
+    int src_frame_rate;
+    int frame_rate;
+};
+
 extern const char *cfg_sensor_vals_vichn_capsel[];
 extern const char *cfg_sensor_vals_vichn_pixel_format[];
 
@@ -142,6 +151,9 @@ struct SensorConfig {
 
     // [vi_chn]
     struct SensorVIChn vichn;
+
+    // [vi_ext]
+    struct SensorVIExt viext;
 };
 
 int cfg_sensor_read(const char* fname, struct SensorConfig* sc);

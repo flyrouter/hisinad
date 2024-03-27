@@ -162,6 +162,14 @@ int sdk_init(const struct SensorConfig* sc)
             stVbConf.astCommPool[vb_pool_i].u32BlkCnt = sc->vb_cnt;
         }
 
+        if (sc->viext.width > 0 && sc->viext.height > 0)
+        {
+            log_info("vi ext size is %ux%u, PixFormat = %s(%d)", sc->viext.width, sc->viext.height, cfg_sensor_vals_vichn_pixel_format[sc->viext.pix_format], sc->viext.pix_format);
+            stVbConf.astCommPool[vb_pool_i].u32BlkSize = CalcPicVbBlkSize(sc->viext.width, sc->viext.height, sc->viext.pix_format, SYS_ALIGN_WIDTH);
+            stVbConf.astCommPool[vb_pool_i].u32BlkCnt = sc->vb_cnt;
+            vb_pool_i++;
+        }
+
         /* hist */
         stVbConf.astCommPool[vb_pool_i].u32BlkSize = (196*4);
         stVbConf.astCommPool[vb_pool_i].u32BlkCnt = 6;

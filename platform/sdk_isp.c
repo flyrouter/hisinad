@@ -226,6 +226,31 @@ int sdk_vi_init(const struct SensorConfig* sc)
         return -1;
     }
 
+    if (sc->viext.width > 0 && sc->viext.height > 0)
+    {
+        log_info("starting ext vi chnl 1: %ux%u, PixFormat = %s(%d), src_fr/fr = %d/%d", sc->viext.width, sc->viext.height, cfg_sensor_vals_vichn_pixel_format[sc->viext.pix_format], sc->viext.pix_format, sc->viext.src_frame_rate, sc->viext.frame_rate);
+
+        VI_EXT_CHN_ATTR_S stViExtChnAttr;
+        stViExtChnAttr.s32BindChn           = 0;
+        stViExtChnAttr.stDestSize.u32Width  = sc->viext.width;
+        stViExtChnAttr.stDestSize.u32Height = sc->viext.height;
+        stViExtChnAttr.s32SrcFrameRate      = sc->viext.src_frame_rate;
+        stViExtChnAttr.s32FrameRate         = sc->viext.frame_rate;
+        stViExtChnAttr.enPixFormat          = sc->viext.pix_format;
+
+        s32Ret = HI_MPI_VI_SetExtChnAttr(1, &stViExtChnAttr);
+        if (HI_SUCCESS != s32Ret) {
+            log_error("HI_MPI_VI_SetExtChnAttr failed with %#x!", s32Ret);
+            return -1;
+        }
+
+        s32Ret = HI_MPI_VI_EnableChn(1);
+        if (HI_SUCCESS != s32Ret) {
+            log_error("HI_MPI_VI_SetExtChnAttr failed with %#x!", s32Ret);
+            return -1;
+        }
+    }
+
     return 0;
 }
 

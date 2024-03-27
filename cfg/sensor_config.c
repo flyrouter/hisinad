@@ -13,6 +13,7 @@
 #define SECTION_isp_image   10
 #define SECTION_vi_dev      20
 #define SECTION_vi_chn      21
+#define SECTION_vi_ext      22
 #define SECTION_vpss_group  30
 #define SECTION_vpss_crop   31
 #define SECTION_vpss_chn    32
@@ -48,6 +49,7 @@ static int __cfg_sensor_read_section_cb(const char* s)
     ADD_SECTION(isp_image)
     ADD_SECTION(vi_dev)
     ADD_SECTION(vi_chn)
+    ADD_SECTION(vi_ext)
     ADD_SECTION(vpss_group)
     ADD_SECTION(vpss_crop)
     ADD_SECTION(vpss_chn)
@@ -274,6 +276,19 @@ static int __cfg_sensor_read_keyval_cb_vi_chn(const char* k, const char* v)
     return CFG_PROC_KEY_BAD;
 }
 
+static int __cfg_sensor_read_keyval_cb_vi_ext(const char* k, const char* v)
+{
+    KEYVAL_PARAM_UL_dec("width", __current_sc->viext.width);
+    KEYVAL_PARAM_UL_dec("height", __current_sc->viext.height);
+
+    KEYVAL_PARAM_ENUM("pixformat",__current_sc->viext.pix_format, cfg_sensor_vals_vichn_pixel_format);
+    KEYVAL_PARAM_UL_dec("srcframerate", __current_sc->viext.src_frame_rate);
+    KEYVAL_PARAM_UL_dec("framerate", __current_sc->viext.frame_rate);
+
+    snprintf(__cfg_sensor_error_key, 256, "%s", k);
+    return CFG_PROC_KEY_BAD;
+}
+
 #define KEYVAL_CASE(section) case SECTION_##section: { return __cfg_sensor_read_keyval_cb_##section(k, v); }
 
 static int __cfg_sensor_read_keyval_cb(const char* k, const char* v)
@@ -286,6 +301,7 @@ static int __cfg_sensor_read_keyval_cb(const char* k, const char* v)
         KEYVAL_CASE(isp_image)
         KEYVAL_CASE(vi_dev)
         KEYVAL_CASE(vi_chn)
+        KEYVAL_CASE(vi_ext)
     }
 //    printf("%s=%s\n", k, v);
     return CFG_PROC_OK;
