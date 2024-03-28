@@ -1,4 +1,3 @@
-#include <sys/mman.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,9 +14,46 @@
 #include "mpi_vb.h"
 #include "hi_comm_vi.h"
 #include "mpi_vi.h"
+#include <stdint.h>
+#include <sys/mman.h>
 
 #define MAX_FRM_CNT     256
 #define MAX_FRM_WIDTH   4096
+
+int fdMemDev = -1;
+
+//void *mmap(void *start, size_t len, int prot, int flags, int fd, uint32_t off);
+
+void * xhi_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
+{
+    fprintf(stderr, "PhyAddr: to mmap %u (0x%x) bytes from 0x%x\n", u32Size, u32Size, u32PhyAddr);
+    if (fdMemDev < 0)
+    {
+        fdMemDev = open("/dev/mem", 4162);
+        if (fdMemDev < 0)
+        {
+            fprintf(stderr, "Can't open /dev/mem: (%d) %s\n", errno, strerror(errno));
+            return 0;
+        }
+
+        unsigned alligned = u32PhyAddr & 0xFFFFF000;
+        unsigned offset = u32PhyAddr - (u32PhyAddr & 0xFFFFF000);
+        unsigned sz = ((u32Size + offset - 1) & 0xFFFFF000) + 0x1000;
+        
+        fprintf(stderr, "going to mmap %u (0x%x) bytes from 0x%x\n", sz, sz, alligned);
+        void* ret = mmap64(0, sz, 3, 1, fdMemDev, alligned);
+        if (!ret) fprintf(stderr, "Can't mmap: (%d) %s\n", errno, strerror(errno));
+        return ret;
+    }
+    return 0;
+}
+
+HI_S32 xhi_MPI_SYS_Munmap(HI_VOID* pVirAddr, HI_U32 u32Size)
+{
+    
+
+}
+
 
 /* sp420 转存为 p420 ; sp422 转存为 p422  */
 void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
@@ -53,7 +89,7 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
     phy_addr = pVBuf->u32PhyAddr[0];
 
     printf("phy_addr:%x, size:%d\n", phy_addr, size);
-    pUserPageAddr[0] = (HI_CHAR *) HI_MPI_SYS_Mmap(phy_addr, size);
+    pUserPageAddr[0] = (HI_CHAR *) xhi_MPI_SYS_Mmap(phy_addr, size);
     if (NULL == pUserPageAddr[0])
     {
         printf("ERR: SYS_Mmap %d\n", errno);
@@ -112,7 +148,7 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
     fprintf(stderr, "done %d!\n", pVBuf->u32TimeRef);
     fflush(stderr);
 
-    HI_MPI_SYS_Munmap(pUserPageAddr[0], size);
+    xhi_MPI_SYS_Munmap(pUserPageAddr[0], size);
 }
 
 HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
@@ -174,7 +210,7 @@ HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
     for(j=0; j<i; j++)
     {
         /* save VI frame to file */
-        vi_dump_save_one_frame(&astFrame[j], pfd);
+        vi_dump_save_one_frame(&(astFrame[j].stVFrame), pfd);
 
         /* release frame after using */
         HI_MPI_VI_ReleaseFrame(ViChn, &astFrame[j]);
@@ -196,7 +232,7 @@ HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
 
 HI_S32 main(int argc, char *argv[])
 {
-    VI_CHN ViChn = 0;
+    VI_CHN ViChn = 1;
     HI_U32 u32FrmCnt = 1;
 
     if (argc > 1)/* VI通道号*/
