@@ -211,9 +211,9 @@ int sdk_vi_init(const struct SensorConfig* sc)
     chn_attr.enPixFormat = sc->vichn.pix_format;
     chn_attr.bMirror = HI_FALSE;
     chn_attr.bFlip = HI_FALSE;
-    chn_attr.s32SrcFrameRate = 30;
+    chn_attr.s32SrcFrameRate = sc->vichn.src_frame_rate;
     chn_attr.bChromaResample = HI_FALSE;
-    chn_attr.s32FrameRate = 30;
+    chn_attr.s32FrameRate = sc->vichn.frame_rate;
     s32Ret = HI_MPI_VI_SetChnAttr(0, &chn_attr);
     if (HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_VI_SetChnAttr failed with %#x!", s32Ret);
