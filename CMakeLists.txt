@@ -52,7 +52,10 @@ target_link_libraries(test_jpeg_rgn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat his
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
-add_executable(tools_hi_vi_reg tools/hi_vireg.c)
+add_executable(tools_vi_ive_hist tools/vi_ive_hist.c)
+target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
+
+add_executable(tools_hi_vi_reg tools/hi_vireg.c platform/sdk_ugly.c)
 
 add_library(sns_imx225_i2c_720p SHARED imx225_i2c/imx225_cmos.c imx225_i2c/imx225_sensor_ctl.c)
 add_library(sns_imx225_i2c_960h SHARED imx225_i2c_960h/imx225_cmos.c imx225_i2c_960h/imx225_sensor_ctl.c)
