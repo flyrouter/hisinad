@@ -37,7 +37,7 @@ static HI_BOOL gsbRegInit = HI_FALSE;
 // sns gain parameters  unit DB
 #define SNS_GAIN_MAX 72
 #define GAIN_PRECISE 0.1
-#define GAIN_TBL_SIZE (int)(SNS_GAIN_MAX / GAIN_PRECISE + 1)
+#define GAIN_TBL_SIZE 721 /* (SNS_GAIN_MAX / GAIN_PRECISE + 1) */
 
 #define FULL_LINES_DEFAULT 750
 #define FULL_LINES_25FPS 900
