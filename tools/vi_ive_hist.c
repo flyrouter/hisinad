@@ -22,12 +22,10 @@
 #define MAX_FRM_CNT     256
 #define MAX_FRM_WIDTH   4096
 
-#define SAMPLE_IVE_HIST_STRIDE 1024
+#define SAMPLE_IVE_HIST_SIZE 1024
 
 
 int fdMemDev = -1;
-
-//void *mmap(void *start, size_t len, int prot, int flags, int fd, uint32_t off);
 
 void * xhi_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
 {
@@ -44,19 +42,25 @@ void * xhi_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
         unsigned alligned = u32PhyAddr & 0xFFFFF000;
         unsigned offset = u32PhyAddr - (u32PhyAddr & 0xFFFFF000);
         unsigned sz = ((u32Size + offset - 1) & 0xFFFFF000) + 0x1000;
-        
+
         fprintf(stderr, "going to mmap %u (0x%x) bytes from 0x%x\n", sz, sz, alligned);
         void* ret = mmap64(0, sz, 3, 1, fdMemDev, alligned);
         if (!ret) fprintf(stderr, "Can't mmap: (%d) %s\n", errno, strerror(errno));
-        return ret;
+        return ret + offset;
     }
     return 0;
 }
 
 HI_S32 xhi_MPI_SYS_Munmap(HI_VOID* pVirAddr, HI_U32 u32Size)
 {
-    
+    unsigned virtaddr = ((unsigned int)pVirAddr);
+    unsigned alligned = virtaddr & 0xFFFFF000;
+    unsigned offset = virtaddr - (virtaddr & 0xFFFFF000);
+    unsigned sz = ((u32Size + offset - 1) & 0xFFFFF000) + 0x1000;
 
+    int ret = munmap((void*)alligned, sz);
+    //fprintf(stderr, "munmap(addr 0x%x, sz %u): ret=%d\n", alligned, sz, ret);
+    return ret;
 }
 
 
@@ -157,26 +161,27 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd_y, FILE *pfd_uv, FI
     IVE_MEM_INFO_S stHist;
     void *pVirHist;
 
-    int s32Ret = HI_MPI_SYS_MmzAlloc(&stHist.u32PhyAddr, &pVirHist, "User", HI_NULL, SAMPLE_IVE_HIST_STRIDE);
+    int s32Ret = HI_MPI_SYS_MmzAlloc(&stHist.u32PhyAddr, &pVirHist, "User", HI_NULL, SAMPLE_IVE_HIST_SIZE);
     if (s32Ret != HI_SUCCESS)
     {
         printf("alloc hist mem error\n");
         return;
     }
-    memset(pVirHist, 0, SAMPLE_IVE_HIST_STRIDE);
+    memset(pVirHist, 0, SAMPLE_IVE_HIST_SIZE);
     int* hist_buf = (unsigned*)pVirHist;
     hist_buf[0] = 18;
     hist_buf[25] = 77;
-    stHist.u32Stride = SAMPLE_IVE_HIST_STRIDE;
+    stHist.u32Stride = 1280;
 
     IVE_SRC_INFO_S srcmem;
     srcmem.enSrcFmt = IVE_SRC_FMT_SINGLE;
     srcmem.stSrcMem.u32PhyAddr = pVBuf->u32PhyAddr[0];
     srcmem.stSrcMem.u32Stride = pVBuf->u32Stride[0];
-    srcmem.u32Width = 320;
-    srcmem.u32Height = 180;
+    srcmem.u32Width = 1280;
+    srcmem.u32Height = 960;
     printf("IVE src PhyAddr=0x%x, stride=%u\n", srcmem.stSrcMem.u32PhyAddr, srcmem.stSrcMem.u32Stride);
 
+    HI_BOOL bFinished;
     IVE_HANDLE IveHandleHIST;
     s32Ret = HI_MPI_IVE_HIST(&IveHandleHIST, &srcmem, &stHist, HI_TRUE);
     if (s32Ret != HI_SUCCESS)
@@ -186,15 +191,18 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd_y, FILE *pfd_uv, FI
     }
 
     printf("now QUERY hist\n");
-    HI_BOOL bFinished;
     s32Ret=HI_MPI_IVE_Query(IveHandleHIST, &bFinished, HI_TRUE);
+
+    srcmem.u32Width = 1280;
+    srcmem.u32Height = 960;
+    printf("now Dilate\n");
 
 // IVE ERODE
     IVE_MEM_INFO_S stDilate;
     IVE_MEM_INFO_S stErode;
     void *pVirDilate;
     void *pVirErode;
-    unsigned sz_pic_mem = 320 * 180;
+    unsigned sz_pic_mem = 1280 * 960;
 
     s32Ret = HI_MPI_SYS_MmzAlloc(&stDilate.u32PhyAddr, &pVirDilate, "User", HI_NULL, sz_pic_mem);
     s32Ret = HI_MPI_SYS_MmzAlloc(&stErode.u32PhyAddr, &pVirErode, "User", HI_NULL, sz_pic_mem);
@@ -204,8 +212,8 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd_y, FILE *pfd_uv, FI
         return;
     }
     memset(pVirErode, 0x7f, sz_pic_mem);
-    stDilate.u32Stride = 320;
-    stErode.u32Stride = 320;
+    stDilate.u32Stride = 1280;
+    stErode.u32Stride = 1280;
 
     IVE_ERODE_CTRL_S stErodeCtrl;
     memset(&stErodeCtrl, 0xff, sizeof(IVE_ERODE_CTRL_S));
@@ -240,7 +248,7 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd_y, FILE *pfd_uv, FI
     s32Ret=HI_MPI_IVE_Query(IveHandleERODE, &bFinished, HI_TRUE);
 
     printf("ERODE finished? %s\n", bFinished ? "Y" : "N");
-    fwrite(pVirErode, 320*180, 1, pfd_erode);
+    fwrite(pVirErode, 1280*960, 1, pfd_erode);
     
 
     for (unsigned i = 0; i < 256; i += 8)
@@ -352,7 +360,7 @@ HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
 
 HI_S32 main(int argc, char *argv[])
 {
-    VI_CHN ViChn = 1;
+    VI_CHN ViChn = 0;
     HI_U32 u32FrmCnt = 1;
 
     SAMPLE_MISC_ViDump(ViChn, u32FrmCnt);

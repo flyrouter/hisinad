@@ -48,8 +48,14 @@ void * xhi_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
 
 HI_S32 xhi_MPI_SYS_Munmap(HI_VOID* pVirAddr, HI_U32 u32Size)
 {
-    
+    unsigned virtaddr = ((unsigned int)pVirAddr);
+    unsigned alligned = virtaddr & 0xFFFFF000;
+    unsigned offset = virtaddr - (virtaddr & 0xFFFFF000);
+    unsigned sz = ((u32Size + offset - 1) & 0xFFFFF000) + 0x1000;
 
+    int ret = munmap((void*)alligned, sz);
+    //fprintf(stderr, "munmap(addr 0x%x, sz %u): ret=%d\n", alligned, sz, ret);
+    return ret;
 }
 
 
