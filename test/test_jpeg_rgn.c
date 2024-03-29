@@ -181,7 +181,7 @@ void venc_jpeg_init_and_test() {
         return;
     }
 
-    render_init();
+    render_init(128*19, 32, 3);
 
     char text_test[128];
 
@@ -192,7 +192,7 @@ void venc_jpeg_init_and_test() {
 
     printf("text: '%s'\n", text_test);
 
-    render_set_brush_color(PURPLE_COLOR);
+    render_set_brush_color(WHITE_COLOR);
     render_draw_string(0, 0, select_fnt, text_test);
     render_save_bitmap();
 

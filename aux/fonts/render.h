@@ -15,9 +15,6 @@
 
 //=========================================================================
 
-#define BYTES_PER_PIXEL 3
-#define BITS_PER_PIXEL BYTES_PER_PIXEL * 8
-
 #define BLACK_COLOR             0x0000
 #define WHITE_COLOR             0xFFFF
 #define RED_COLOR               0xF800
@@ -31,9 +28,6 @@
 
 #define DEFALT_BG_COLOR BLACK_COLOR
 #define DEFALT_BRUSH_COLOR WHITE_COLOR
-
-#define WIDTH                   1024
-#define HEIGHT                  48
 
 #define RGB565_TO_R8(color)         (((color) & 0xF800) >> 8)
 #define RGB565_TO_G8(color)         (((color) & 0x07E0) >> 3)
@@ -93,18 +87,21 @@ typedef struct {
 } bitmap;
 #pragma pack(pop)
 
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+    uint8_t bbp;
+    uint8_t *pixelbuffer;
+} rend_t;
+
 #define _planes 1
 #define _compression 0
-#define _pixelbytesize HEIGHT * WIDTH * BYTES_PER_PIXEL
-#define _filesize _pixelbytesize + sizeof(bitmap)
 #define _xpixelpermeter 0x130B //2835 , 72 DPI
 #define _ypixelpermeter 0x130B //2835 , 72 DPI
-#define pixel_black 0x00
-#define pixel_white 0xFF
 
 //=========================================================================
 void get_hi_bmp(BITMAP_S *bmp);
-void render_init(void);
+void render_init(uint32_t width, uint32_t height, uint8_t bbp);
 void render_deinit(void);
 void render_save_bitmap(void);
 void render_clear_screen(void);
