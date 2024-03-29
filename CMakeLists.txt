@@ -52,6 +52,9 @@ target_link_libraries(test_jpeg_rgn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat his
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
+add_executable(tools_vi_dump_nosdk tools/vi_dump_nosdk.c hitiny/hitiny_vi.c)
+target_link_libraries(tools_vi_dump_nosdk hisinad_aux)
+
 add_executable(tools_vi_ive_hist tools/vi_ive_hist.c)
 target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
