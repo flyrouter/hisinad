@@ -5,7 +5,7 @@
 #define DIV_UP(x, a)             ( ((x) + ((a) - 1) ) / a )
 
 //=========================================================================
-static uint8_t *pixelbuffer = NULL;
+static rend_t rend = {0};
 
 static rect_t screen_bond;
 static point_t cur;
@@ -45,69 +45,38 @@ void save_bitmap(uint8_t *pbuf) {
     FILE *fp = fopen("test.bmp", "wb");
     bitmap *pbitmap  = (bitmap*)calloc(1, sizeof(bitmap));
     strcpy(pbitmap->fileheader.signature, "BM");
-    pbitmap->fileheader.filesize = _filesize;
+    pbitmap->fileheader.filesize = rend.height * rend.width * rend.bbp + sizeof(bitmap);
     pbitmap->fileheader.fileoffset_to_pixelarray = sizeof(bitmap);
     pbitmap->bitmapinfoheader.dibheadersize = sizeof(bitmapinfoheader);
-    pbitmap->bitmapinfoheader.width = WIDTH;
-    pbitmap->bitmapinfoheader.height = -HEIGHT;
-    // pbitmap->bitmapinfoheader.height = -_height;
+    pbitmap->bitmapinfoheader.width = rend.width;
+    pbitmap->bitmapinfoheader.height = -rend.height;
     pbitmap->bitmapinfoheader.planes = _planes;
-    pbitmap->bitmapinfoheader.bitsperpixel = BITS_PER_PIXEL;
+    pbitmap->bitmapinfoheader.bitsperpixel = rend.bbp * 8;
     pbitmap->bitmapinfoheader.compression = _compression;
-    pbitmap->bitmapinfoheader.imagesize = _pixelbytesize;
-    pbitmap->bitmapinfoheader.ypixelpermeter = _ypixelpermeter ;
-    pbitmap->bitmapinfoheader.xpixelpermeter = _xpixelpermeter ;
+    pbitmap->bitmapinfoheader.imagesize = rend.height * rend.width * rend.bbp;
+    pbitmap->bitmapinfoheader.ypixelpermeter = _ypixelpermeter;
+    pbitmap->bitmapinfoheader.xpixelpermeter = _xpixelpermeter;
     pbitmap->bitmapinfoheader.numcolorspallette = 0;
     fwrite (pbitmap, 1, sizeof(bitmap), fp);
 
-    fwrite(pbuf, 1, _pixelbytesize, fp);
+    fwrite(pbuf, 1, rend.height * rend.width * rend.bbp, fp);
     free(pbitmap);
     fclose(fp);
 }
 
 void render_save_bitmap(void) {
-    save_bitmap(pixelbuffer);
+    save_bitmap(rend.pixelbuffer);
 }
 
 void get_hi_bmp(BITMAP_S *bmp) {
-    HI_S32 s32BytesPerPix = 2;
-    // bmp->enPixelFormat = PIXEL_FORMAT_RGB_555;
-    // bmp->enPixelFormat = PIXEL_FORMAT_RGB_2BPP; // PIXEL_FORMAT_2BPP;
     bmp->enPixelFormat = PIXEL_FORMAT_RGB_1555;
-    bmp->u32Width = WIDTH;
-    bmp->u32Height = HEIGHT;
-
-    // HI_U16* pu16Data = malloc((WIDTH * BYTES_PER_PIXEL) * (HEIGHT));
-    // HI_U16* pu16Data = malloc(((WIDTH * BYTES_PER_PIXEL) * (HEIGHT)) * sizeof(HI_U16));
-    HI_U16* pu16Data = malloc(((WIDTH) * (HEIGHT))*2);
-    // HI_U16* pu16Data = malloc(((WIDTH * BYTES_PER_PIXEL) * (HEIGHT)));
-    printf("(WIDTH * BYTES_PER_PIXEL) * (HEIGHT): %d\n", (WIDTH * BYTES_PER_PIXEL) * (HEIGHT));
-    // printf("(WIDTH * BYTES_PER_PIXEL) * (HEIGHT): %d\n", (WIDTH * BYTES_PER_PIXEL) * (HEIGHT));
-
-    // uint32_t location = x * (BITS_PER_PIXEL / 8) + y * WIDTH * BYTES_PER_PIXEL;
+    bmp->u32Width = rend.width;
+    bmp->u32Height = rend.height;
+    HI_U16* pu16Data = malloc(rend.width * rend.height * rend.bbp);
     int x = 0;
-    for (int i = 0; i < ((WIDTH * BYTES_PER_PIXEL) * (HEIGHT)); i=i+3) {
-#if 0
-        *pu16Data = pixelbuffer[i];
-        *pu16Data = *pu16Data << 8;
-        *pu16Data |= pixelbuffer[i+1];
-        *pu16Data++;
-#else
-        /*
-        r          g          b
-        1111 1111  1111 1111  1111 1111
-        1  11111  11111 11111
-        1111111111111111 1111111111111111 1111111111111111
-        */
-
-        // pu16Data[x] = (red << (5+5) | (green << 5) | blue);
-        pu16Data[x] = ((pixelbuffer[i] & 0xF8) << 8) | ((pixelbuffer[i+1] & 0xfc) << 3) | (pixelbuffer[i+2] >> 3);
-        // *pu16Data = ((pixelbuffer[i] & 0xF8) << 8) | ((pixelbuffer[i+1] & 0xfc) << 3) | (pixelbuffer[i+2] >> 3);
-        // *pu16Data++;
-
-
+    for (int i = 0; i < ((rend.width * rend.bbp) * (rend.height)); i = i + rend.bbp) {
+        pu16Data[x] = ((rend.pixelbuffer[i] & 0xF8) << 8) | ((rend.pixelbuffer[i + 1] & 0xfc) << 3) | (rend.pixelbuffer[i + 2] >> 3);
         x++;
-#endif
     }
     free(bmp->pData);
     bmp->pData = (HI_VOID*) pu16Data;
@@ -116,8 +85,11 @@ void get_hi_bmp(BITMAP_S *bmp) {
 
 //=========================================================================
 
-void render_init() {
-    pixelbuffer = (uint8_t*)malloc(_pixelbytesize);
+void render_init(uint32_t width, uint32_t height, uint8_t bbp) {
+    rend.width = width;
+    rend.height = height;
+    rend.bbp = bbp;
+    rend.pixelbuffer = (uint8_t*)malloc(height * width * bbp); // BYTES PER PIXEL
     render_set_back_color(DEFALT_BG_COLOR);
     render_set_brush_color(DEFALT_BRUSH_COLOR);
 
@@ -127,53 +99,38 @@ void render_init() {
 //=========================================================================
 
 void render_deinit() {
-    free(pixelbuffer);
-    // uint32_t screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
-    // munmap (fbp, screensize);
-    // close (fp);
+    free(rend.pixelbuffer);
 }
 //=========================================================================
 
 void render_clear_screen() {
-    // uint16_t width = MIN(WIDTH, vinfo.xres);
-    // uint16_t height = MIN(HEIGHT, vinfo.yres);
-    render_fill_rect(0, 0, WIDTH, HEIGHT, DEFALT_BG_COLOR);
+    render_fill_rect(0, 0, rend.width, rend.height, DEFALT_BG_COLOR);
 }
 
 //=========================================================================
 
 void render_draw_pixel(uint16_t x, uint16_t y, color_t color) {
-    if (!pixelbuffer || (pixelbuffer == (void*)-1)) {
+    if (!rend.pixelbuffer || (rend.pixelbuffer == (void*)-1)) {
         printf("!pixelbuffer ||  (pixelbuffer == (void*)-1)\n");
         return;
     }
 
-    if (x >= WIDTH || y >= HEIGHT) {
+    if (x >= rend.width || y >= rend.height) {
         printf("x(%d) >= LCD_WIDTH || y(%d) >= LCD_HEIGHT\n", x, y);
         return;
     }
 
-    uint32_t location = x * (BITS_PER_PIXEL / 8) + y * WIDTH * BYTES_PER_PIXEL;
+    // uint32_t location = x * (_bitsperpixel / 8) + y * rend.width * rend.bbp; // BYTES_PER_PIXEL
+    uint32_t location = x * rend.bbp + y * rend.width * rend.bbp; // BYTES_PER_PIXEL
 
     uint8_t r = RGB565_TO_R8(color);
     uint8_t g = RGB565_TO_G8(color);
     uint8_t b = RGB565_TO_B8(color);
 
-#if 1
-    *(pixelbuffer + location) = b;        // blue
-    *(pixelbuffer + location + 1) = g;    // green
-    *(pixelbuffer + location + 2) = r;    // red
-    *(pixelbuffer + location + 3) = 0;    // alpha
-#else
-    *(pixelbuffer + location) = 0;        // blue
-    *(pixelbuffer + location + 1) = r;    // green
-    *(pixelbuffer + location + 2) = g;    // red
-    *(pixelbuffer + location + 3) = b;    // alpha
-    // *(pixelbuffer + location) = r;        // blue
-    // *(pixelbuffer + location + 1) = g;    // green
-    // *(pixelbuffer + location + 2) = b;    // red
-    // *(pixelbuffer + location + 3) = 0;    // alpha
-#endif
+    *(rend.pixelbuffer + location) = b;        // blue
+    *(rend.pixelbuffer + location + 1) = g;    // green
+    *(rend.pixelbuffer + location + 2) = r;    // red
+    *(rend.pixelbuffer + location + 3) = 0;    // alpha
 }
 
 //=========================================================================
@@ -521,7 +478,7 @@ void draw_char(uint16_t x, uint16_t y, const font_t *fnt, utf8_t c) {
     #error "Unsupported ENCODING_METHOD"
 #endif
 
-    render_set_bound(0, 0, WIDTH - 1, HEIGHT - 1);
+    render_set_bound(0, 0, rend.width - 1, rend.height - 1);
 }
 
 //=========================================================================
