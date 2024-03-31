@@ -27,8 +27,6 @@ typedef struct vda_chn_info_s
     unsigned phy_addr;
     void* ptr;
     unsigned sz;
-    void* ptr_mmap;
-    unsigned sz_mmap;
 } vda_chn_info_t;
 
 vda_chn_info_t vda_chns[VDA_CHN_NUM_MAX] = { 0 };
@@ -93,12 +91,7 @@ int xhi_MPI_VDA_CreateChn(VDA_CHN VdaChn, const VDA_CHN_ATTR_S *pstAttr)
     vda_chns[VdaChn].phy_addr = param[0];
     vda_chns[VdaChn].sz = param[1];
 
-    unsigned alligned = param[0] & 0xFFFFF000;
-    unsigned offset = param[0] - (param[0] & 0xFFFFF000);
-    unsigned sz_mmap = ((param[1] + offset - 1) & 0xFFFFF000) + 0x1000;
-
-    log_info("mmap now from 0x%x %u bytes", alligned, sz_mmap);
-    void* ptr = mmap(0, sz_mmap, 3, 1, vda_mem_fd, alligned);
+    void* ptr = hitiny_MPI_SYS_Mmap(vda_chns[VdaChn].phy_addr, vda_chns[VdaChn].sz);
     if (ptr == (void*)(-1))
     {
         log_error("Can't mmap: (%d) %s", errno, strerror(errno));
@@ -106,11 +99,9 @@ int xhi_MPI_VDA_CreateChn(VDA_CHN VdaChn, const VDA_CHN_ATTR_S *pstAttr)
         return 0xa009800c;
     }
 
-    vda_chns[VdaChn].ptr = ptr + offset;
-    vda_chns[VdaChn].ptr_mmap = ptr;
-    vda_chns[VdaChn].sz_mmap = sz_mmap;
-    log_info("vda chnl ptr is 0x%x", vda_chns[VdaChn].ptr);
+    vda_chns[VdaChn].ptr = ptr;
 
+    log_info("vda chnl ptr is 0x%x", vda_chns[VdaChn].ptr);
     return 0;
 }
 
@@ -124,7 +115,10 @@ HI_S32 xhi_MPI_VDA_DestroyChn(VDA_CHN VdaChn)
 
     if (vda_chns[VdaChn].ptr)
     {
-        ret = munmap(vda_chns[VdaChn].ptr_mmap, vda_chns[VdaChn].sz_mmap);
+        ret = hitiny_MPI_SYS_Munmap(vda_chns[VdaChn].ptr, vda_chns[VdaChn].sz);
+        vda_chns[VdaChn].phy_addr = 0;
+        vda_chns[VdaChn].ptr = 0;
+        vda_chns[VdaChn].sz = 0;
     }
     
     vda_chns[VdaChn].fd = -1;
