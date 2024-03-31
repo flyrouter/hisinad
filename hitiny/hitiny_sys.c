@@ -131,7 +131,7 @@ void* hitiny_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
         unsigned sz = ((u32Size + offset - 1) & 0xFFFFF000) + 0x1000;
         
         void* ret = mmap(0, sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd_MemDev, alligned);
-        if (!ret) log_error("Can't mmap: (%d) %s", errno, strerror(errno));
+        if (ret == MAP_FAILED) log_error("Can't mmap: (%d) %s", errno, strerror(errno));
         return ret + offset;
     }
     return 0;
