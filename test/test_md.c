@@ -130,13 +130,154 @@ int xhi_MPI_VDA_CreateChn(VDA_CHN VdaChn, const VDA_CHN_ATTR_S *pstAttr)
     return 0;
 }
 
+HI_S32 xhi_MPI_VDA_StartRecvPic(VDA_CHN VdaChn)
+{
+    int vda_chn_fd = xhi_MPI_VDA_GetFd(VdaChn);
+
+    if (vda_chn_fd < 0) return vda_chn_fd;
+
+    return ioctl(vda_chn_fd, 0x4d06);
+}
+
+struct vda_get_data_param_t
+{
+    VDA_DATA_S vda_data;
+    HI_BOOL blocking;
+    uint32_t reserved[5];
+};
+
+HI_S32 xhi_MPI_VDA_GetData(VDA_CHN VdaChn, VDA_DATA_S *pstVdaData, HI_BOOL bBlock)
+{
+    int fd = xhi_MPI_VDA_GetFd(VdaChn);
+    if (fd < 0) return fd;
+
+    if (!pstVdaData) return 0xA0098006;
+
+    struct vda_get_data_param_t param;
+    memset(&param, 0, sizeof(struct vda_get_data_param_t));
+    param.blocking = bBlock;
+
+    int ret = ioctl(fd, 0xc0504d08, &param);
+    if (ret) return ret;
+
+//    log_info("Got VDA DATA: enWorkMode = %u, enMbSize = %u, razmer %ux%u", 
+//        param.vda_data.enWorkMode, param.vda_data.enMbSize,
+//        param.vda_data.u32MbWidth, param.vda_data.u32MbHeight);
+
+    *pstVdaData = param.vda_data;
+    if (param.vda_data.enWorkMode == VDA_WORK_MODE_MD)
+    {
+        if (param.vda_data.unData.stMdData.bMbSadValid)
+        {
+            pstVdaData->unData.stMdData.stMbSadData.pAddr = vda_chns[VdaChn].ptr + (unsigned)pstVdaData->unData.stMdData.stMbSadData.pAddr - vda_chns[VdaChn].phy_addr;
+//            log_info("unData.stMdData.stMbSadData.pAddr is 0x%x (global ptr 0x%x)", pstVdaData->unData.stMdData.stMbSadData.pAddr, vda_chns[VdaChn].ptr);
+        }
+        if (param.vda_data.unData.stMdData.bObjValid)
+        {
+            pstVdaData->unData.stMdData.stObjData.pstAddr = (VDA_OBJ_S *)(vda_chns[VdaChn].ptr + (unsigned)pstVdaData->unData.stMdData.stObjData.pstAddr - vda_chns[VdaChn].phy_addr);
+//            log_info("OBJ! Data at 0x%x", pstVdaData->unData.stMdData.stObjData.pstAddr);
+        }
+    }
+
+    return 0;
+}
+
+HI_S32 xhi_MPI_VDA_ReleaseData(VDA_CHN VdaChn, const VDA_DATA_S* pstVdaData)
+{
+    int fd = xhi_MPI_VDA_GetFd(VdaChn);
+    if (fd < 0) return fd;
+
+    if (!pstVdaData) return 0xA0098006;
+
+    return ioctl(fd, 0x40484D09, pstVdaData);
+}
+
+void print_md_data(const VDA_DATA_S *pstVdaData)
+{
+    if (pstVdaData->unData.stMdData.bObjValid && pstVdaData->unData.stMdData.stObjData.u32ObjNum > 0)
+    {
+        log_info("ObjNum=%d, IndexOfMaxObj=%d, SizeOfMaxObj=%d, SizeOfTotalObj=%d", \
+                   pstVdaData->unData.stMdData.stObjData.u32ObjNum, \
+             pstVdaData->unData.stMdData.stObjData.u32IndexOfMaxObj, \
+             pstVdaData->unData.stMdData.stObjData.u32SizeOfMaxObj,\
+             pstVdaData->unData.stMdData.stObjData.u32SizeOfTotalObj);
+        for (int i=0; i<pstVdaData->unData.stMdData.stObjData.u32ObjNum; i++)
+        {
+            VDA_OBJ_S *pstVdaObj = pstVdaData->unData.stMdData.stObjData.pstAddr + i;
+            log_info("[%d]\t left=%d, top=%d, right=%d, bottom=%d", i, \
+              pstVdaObj->u16Left, pstVdaObj->u16Top, \
+              pstVdaObj->u16Right, pstVdaObj->u16Bottom);
+        }
+    }
+/*
+    if (!pstVdaData->unData.stMdData.bPelsNumValid)
+    {
+        log_info("bMbObjValid = FALSE");
+    }
+    else
+    {
+        log_info("AlarmPixelCount=%d\n", pstVdaData->unData.stMdData.u32AlarmPixCnt);
+    }
+*/
+}
+
+void test_RUN()
+{
+    unsigned VdaChn = 0;
+
+    fd_set read_fds;
+    struct timeval TimeoutVal;
+
+    int fd = xhi_MPI_VDA_GetFd(VdaChn);
+    if (fd < 0) return;
+
+    int maxfd = fd;
+
+    while (!stop_flag)
+    {
+        FD_ZERO(&read_fds);
+        FD_SET(fd, &read_fds);
+
+        TimeoutVal.tv_sec  = 2;
+        TimeoutVal.tv_usec = 0;
+        int s32Ret = select(maxfd + 1, &read_fds, NULL, NULL, &TimeoutVal);
+        if (s32Ret < 0)
+        {
+            log_error("select() error");
+            return;
+        }
+        else if (s32Ret == 0)
+        {
+            log_info("TIMEOUT");
+            break;
+        }
+
+        if (!FD_ISSET(fd, &read_fds))
+        {
+            log_error("WHAT???");
+            return;
+        }
+
+        VDA_DATA_S stVdaData;
+
+        s32Ret = xhi_MPI_VDA_GetData(VdaChn, &stVdaData, HI_TRUE);
+        if (!s32Ret)
+        {
+            print_md_data(&stVdaData);
+        }
+        else
+        {
+            log_error("xhi_MPI_VDA_GetData returned error 0x%x", s32Ret);
+        }
+        s32Ret = xhi_MPI_VDA_ReleaseData(VdaChn,&stVdaData);
+    }
+}
+
 void test_md()
 {
     unsigned VdaChn = 0;
 
-    unsigned XXX_PRE = -1;
     VDA_CHN_ATTR_S stVdaChnAttr;
-    unsigned XXX_POST = -1;
     MPP_CHN_S stSrcChn, stDestChn;
 
     stVdaChnAttr.enWorkMode = VDA_WORK_MODE_MD;
@@ -148,10 +289,10 @@ void test_md()
     stVdaChnAttr.unAttr.stMdAttr.enMbSadBits   = VDA_MB_SAD_8BIT;
     stVdaChnAttr.unAttr.stMdAttr.enRefMode     = VDA_REF_MODE_DYNAMIC;
     stVdaChnAttr.unAttr.stMdAttr.u32MdBufNum   = 8;
-    stVdaChnAttr.unAttr.stMdAttr.u32VdaIntvl   = 4;
+    stVdaChnAttr.unAttr.stMdAttr.u32VdaIntvl   = 10;
     stVdaChnAttr.unAttr.stMdAttr.u32BgUpSrcWgt = 128;
-    stVdaChnAttr.unAttr.stMdAttr.u32SadTh      = 240;
-    stVdaChnAttr.unAttr.stMdAttr.u32ObjNumMax  = 128;
+    stVdaChnAttr.unAttr.stMdAttr.u32SadTh      = 4000;
+    stVdaChnAttr.unAttr.stMdAttr.u32ObjNumMax  = 16;
 
     int fd = xhi_MPI_VDA_GetFd(VdaChn);
     if(fd < 0)
@@ -166,6 +307,34 @@ void test_md()
         log_error("Can't create VDA chn: 0x%x", s32Ret);
         return;
     }
+
+    log_info("going to bind");
+    stSrcChn.enModId = HI_ID_VIU;
+    stSrcChn.s32ChnId = 1;
+    stSrcChn.s32DevId = 0;
+
+    stDestChn.enModId = HI_ID_VDA;
+    stDestChn.s32ChnId = VdaChn;
+    stDestChn.s32DevId = 0;
+
+    s32Ret = HI_MPI_SYS_Bind(&stSrcChn, &stDestChn);
+    if(s32Ret != HI_SUCCESS)
+    {
+        log_error("Can't bind VDA to VI: 0x%x", s32Ret);
+        return;
+    }
+
+    /* step 3: vda chn start recv picture */
+    log_info("going to start");
+    s32Ret = xhi_MPI_VDA_StartRecvPic(VdaChn);
+    if(s32Ret != HI_SUCCESS)
+    {
+        log_error("Can't HI_MPI_VDA_StartRecvPic: 0x%x", s32Ret);
+        return;
+    }
+
+
+    test_RUN();
 
 return;
 // GYGYGY
@@ -233,7 +402,7 @@ log_info("PRE md");
         test_md();
 log_info("POST md");
         
-        sleep(5);
+        sleep(1);
     }
 
     sdk_isp_done();
