@@ -2,7 +2,9 @@
 #define __AUX_SYSTEM_H__
 
 #include <fcntl.h>
+#ifndef __NO_MMAN__
 #include <sys/mman.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "string.h"
