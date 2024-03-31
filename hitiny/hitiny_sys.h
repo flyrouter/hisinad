@@ -9,6 +9,9 @@ void hitiny_MPI_SYS_Done();
 int hitiny_sys_bind_VPSS_GROUP(int vpss_dev_id, int vpss_chn_id, int grp_id);
 int hitiny_sys_unbind_VPSS_GROUP(int vpss_dev_id, int vpss_chn_id, int grp_id);
 
+int hitiny_sys_bind_VI_VDA(int vi_dev, int vi_chn, int vda_chn);
+int hitiny_sys_unbind_VI_VDA(int vi_dev, int vi_chn, int vda_chn);
+
 int hitiny_open_dev(const char* fname);
 
 void* hitiny_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size);

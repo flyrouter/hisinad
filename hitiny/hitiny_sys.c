@@ -68,6 +68,46 @@ int hitiny_sys_bind_VPSS_GROUP(int vpss_dev_id, int vpss_chn_id, int grp_id)
     return ioctl(fd_SysDev, 0x40185907, &param);
 }
 
+int hitiny_sys_bind_VI_VDA(int vi_dev, int vi_chn, int vda_chn)
+{
+    if (fd_SysDev < 0)
+    {
+        fd_SysDev = hitiny_open_dev("/dev/sys");
+        if (fd_SysDev < 0) return 0xA0028010;
+    }
+
+    hitiny_sys_bind_param_t param;
+    param.src.enModId = HI_ID_VIU;
+    param.src.s32DevId = vi_dev;
+    param.src.s32ChnId =vi_chn;
+
+    param.dest.enModId = HI_ID_VDA;
+    param.dest.s32ChnId = vda_chn;
+    param.dest.s32DevId = 0;
+
+    return ioctl(fd_SysDev, 0x40185907, &param);
+}
+
+int hitiny_sys_unbind_VI_VDA(int vi_dev, int vi_chn, int vda_chn)
+{
+    if (fd_SysDev < 0)
+    {
+        fd_SysDev = hitiny_open_dev("/dev/sys");
+        if (fd_SysDev < 0) return 0xA0028010;
+    }
+
+    hitiny_sys_bind_param_t param;
+    param.src.enModId = HI_ID_VIU;
+    param.src.s32DevId = vi_dev;
+    param.src.s32ChnId =vi_chn;
+
+    param.dest.enModId = HI_ID_VDA;
+    param.dest.s32ChnId = vda_chn;
+    param.dest.s32DevId = 0;
+
+    return ioctl(fd_SysDev, 0x40185908, &param);
+}
+
 int hitiny_sys_unbind_VPSS_GROUP(int vpss_dev_id, int vpss_chn_id, int grp_id)
 {
     if (fd_SysDev < 0)
