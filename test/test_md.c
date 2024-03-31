@@ -137,7 +137,7 @@ HI_S32 hitiny_MPI_VDA_DestroyChn(VDA_CHN VdaChn)
     return ret;
 }
 
-HI_S32 xhi_MPI_VDA_StartRecvPic(VDA_CHN VdaChn)
+HI_S32 hitiny_MPI_VDA_StartRecvPic(VDA_CHN VdaChn)
 {
     int vda_chn_fd = hitiny_MPI_VDA_GetFd(VdaChn);
 
@@ -146,7 +146,7 @@ HI_S32 xhi_MPI_VDA_StartRecvPic(VDA_CHN VdaChn)
     return ioctl(vda_chn_fd, 0x4d06);
 }
 
-HI_S32 xhi_MPI_VDA_StopRecvPic(VDA_CHN VdaChn)
+HI_S32 hitiny_MPI_VDA_StopRecvPic(VDA_CHN VdaChn)
 {
     int vda_chn_fd = hitiny_MPI_VDA_GetFd(VdaChn);
 
@@ -162,9 +162,10 @@ struct vda_get_data_param_t
     uint32_t reserved[5];
 };
 
-HI_S32 xhi_MPI_VDA_GetData(VDA_CHN VdaChn, VDA_DATA_S *pstVdaData, HI_BOOL bBlock)
+HI_S32 hitiny_MPI_VDA_GetData(VDA_CHN VdaChn, VDA_DATA_S *pstVdaData, HI_BOOL bBlock)
 {
     int fd = hitiny_MPI_VDA_GetFd(VdaChn);
+
     if (fd < 0) return fd;
 
     if (!pstVdaData) return 0xa0098006;
@@ -174,6 +175,7 @@ HI_S32 xhi_MPI_VDA_GetData(VDA_CHN VdaChn, VDA_DATA_S *pstVdaData, HI_BOOL bBloc
     param.blocking = bBlock;
 
     int ret = ioctl(fd, 0xc0504d08, &param);
+
     if (ret) return ret;
 
 //    log_info("Got VDA DATA: enWorkMode = %u, enMbSize = %u, razmer %ux%u", 
@@ -186,26 +188,24 @@ HI_S32 xhi_MPI_VDA_GetData(VDA_CHN VdaChn, VDA_DATA_S *pstVdaData, HI_BOOL bBloc
         if (param.vda_data.unData.stMdData.bMbSadValid)
         {
             pstVdaData->unData.stMdData.stMbSadData.pAddr = vda_chns[VdaChn].ptr + (unsigned)pstVdaData->unData.stMdData.stMbSadData.pAddr - vda_chns[VdaChn].phy_addr;
-//            log_info("unData.stMdData.stMbSadData.pAddr is 0x%x (global ptr 0x%x)", pstVdaData->unData.stMdData.stMbSadData.pAddr, vda_chns[VdaChn].ptr);
         }
         if (param.vda_data.unData.stMdData.bObjValid)
         {
             pstVdaData->unData.stMdData.stObjData.pstAddr = (VDA_OBJ_S *)(vda_chns[VdaChn].ptr + (unsigned)pstVdaData->unData.stMdData.stObjData.pstAddr - vda_chns[VdaChn].phy_addr);
-//            log_info("OBJ! Data at 0x%x", pstVdaData->unData.stMdData.stObjData.pstAddr);
         }
     }
 
     return 0;
 }
 
-HI_S32 xhi_MPI_VDA_ReleaseData(VDA_CHN VdaChn, const VDA_DATA_S* pstVdaData)
+HI_S32 hitiny_MPI_VDA_ReleaseData(VDA_CHN VdaChn, const VDA_DATA_S* pstVdaData)
 {
     int fd = hitiny_MPI_VDA_GetFd(VdaChn);
     if (fd < 0) return fd;
 
-    if (!pstVdaData) return 0xA0098006;
+    if (!pstVdaData) return 0xa0098006;
 
-    return ioctl(fd, 0x40484D09, pstVdaData);
+    return ioctl(fd, 0x40484d09, pstVdaData);
 }
 
 void print_md_data(const VDA_DATA_S *pstVdaData)
@@ -276,16 +276,17 @@ void test_RUN()
 
         VDA_DATA_S stVdaData;
 
-        s32Ret = xhi_MPI_VDA_GetData(VdaChn, &stVdaData, HI_TRUE);
+        s32Ret = hitiny_MPI_VDA_GetData(VdaChn, &stVdaData, HI_FALSE);
+
         if (!s32Ret)
         {
             print_md_data(&stVdaData);
         }
         else
         {
-            log_error("xhi_MPI_VDA_GetData returned error 0x%x", s32Ret);
+            log_error("MPI_VDA_GetData returned error 0x%x", s32Ret);
         }
-        s32Ret = xhi_MPI_VDA_ReleaseData(VdaChn,&stVdaData);
+        s32Ret = hitiny_MPI_VDA_ReleaseData(VdaChn,&stVdaData);
     }
 }
 
@@ -337,7 +338,7 @@ void test_md()
     }
 
     log_info("going to start recv");
-    s32Ret = xhi_MPI_VDA_StartRecvPic(VdaChn);
+    s32Ret = hitiny_MPI_VDA_StartRecvPic(VdaChn);
     if(s32Ret != HI_SUCCESS)
     {
         log_error("Can't HI_MPI_VDA_StartRecvPic: 0x%x", s32Ret);
@@ -348,7 +349,7 @@ void test_md()
     log_info("VDA init OK!");
     test_RUN();
 
-    s32Ret = xhi_MPI_VDA_StopRecvPic(VdaChn);
+    s32Ret = hitiny_MPI_VDA_StopRecvPic(VdaChn);
     if(s32Ret != HI_SUCCESS)
     {
         log_error("Can't VDA chnl stop recv pic: 0x%x", s32Ret);
