@@ -225,16 +225,15 @@ void print_md_data(const VDA_DATA_S *pstVdaData)
               pstVdaObj->u16Right, pstVdaObj->u16Bottom);
         }
     }
-/*
+
     if (!pstVdaData->unData.stMdData.bPelsNumValid)
     {
         log_info("bMbObjValid = FALSE");
     }
     else
     {
-        log_info("AlarmPixelCount=%d\n", pstVdaData->unData.stMdData.u32AlarmPixCnt);
+        log_info("AlarmPixelCount=%d", pstVdaData->unData.stMdData.u32AlarmPixCnt);
     }
-*/
 }
 
 void test_RUN()
