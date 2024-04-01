@@ -10,7 +10,7 @@ find_package(Threads REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${VENDOR_SDK_INCLUDE_DIRS})
-
+include_directories(libev)
 
 if (HISILICON_SDK_VERSION STREQUAL "1.0.B.0.")
 add_definitions(-DISP_EX_ATTR -DCONFIG_FONT_FIXED_WIDTH_HEIGHT=1 -DCONFIG_FONT_ENC=1 -DCONFIG_BPP=2)
@@ -18,6 +18,7 @@ endif()
 
 add_library(hisinad_aux STATIC aux/logger.c aux/system.c)
 add_library(hisinad_cfg STATIC cfg/common.c cfg/sensor_config.c cfg/sensor_cfg_print.c)
+add_library(libevx STATIC libev/ev.c)
 
 add_executable(test_cfg_read test/test_cfg_read.c cfg/common.c)
 add_executable(test_cfg_sensor test/test_cfg_sensor.c)
@@ -57,6 +58,9 @@ target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
 add_executable(tools_vi_dump_nosdk tools/vi_dump_nosdk.c hitiny/hitiny_vi.c hitiny/hitiny_sys.c)
 target_link_libraries(tools_vi_dump_nosdk hisinad_aux)
+
+add_executable(hisina-md-tune tools/hisina-md-tune/main.c hitiny/hitiny_vi.c hitiny/hitiny_sys.c hitiny/hitiny_vda.c cfg/vdacfg.c cfg/common.c)
+target_link_libraries(hisina-md-tune hisinad_aux libevx)
 
 add_executable(tools_vi_ive_hist tools/vi_ive_hist.c)
 target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)

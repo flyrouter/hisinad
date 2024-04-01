@@ -68,7 +68,7 @@ static int __cfg_sensor_read_section_cb(const char* s)
     return CFG_PROC_WRONG_SECTION;
 }
 
-struct SensorConfig* __current_sc = 0;
+static struct SensorConfig* __current_sc = 0;
 #define KEYVAL_PARAM_COPY_STR(key, dest, MAX) if (strcasecmp(key, k) == 0) { snprintf(dest, MAX, "%s", v); return CFG_PROC_OK; }
 #define KEYVAL_PARAM_IGN(key) if (strcasecmp(key, k) == 0) { return CFG_PROC_OK; }
 
