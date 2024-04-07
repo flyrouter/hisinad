@@ -50,7 +50,7 @@ static HI_S32 cmos_get_ae_default(AE_SENSOR_DEFAULT_S *pstAeSnsDft)
     //fprintf(stderr, "DBG: cmos_get_ae_default(*)\n");
     if (HI_NULL == pstAeSnsDft)
     {
-        printf("null pointer when get ae default value!\n");
+        fprintf(stderr, "null pointer when get ae default value!\n");
         return -1;
     }
 
@@ -102,7 +102,7 @@ HI_U32 cmos_get_isp_black_level(ISP_CMOS_BLACK_LEVEL_S *pstBlackLevel)
 
     if (HI_NULL == pstBlackLevel)
     {
-        printf("null pointer when get isp black level value!\n");
+        fprintf(stderr, "null pointer when get isp black level value!\n");
         return -1;
     }
 
@@ -171,7 +171,7 @@ static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
     unsigned gaininfo = cmos_get_gaininfo();
     if (gaininfo)
     {
-        fprintf(stderr, "\tgaininfo = %u\n", gaininfo);
+        //fprintf(stderr, "\tgaininfo = %u\n", gaininfo);
         cmos_Set_DPC(40 - gaininfo, 38 * gaininfo + 1111);
 
         if (gaininfo <= 2)
@@ -338,7 +338,7 @@ static HI_S32 cmos_get_sensor_max_resolution(ISP_CMOS_SENSOR_MAX_RESOLUTION *pst
 {
     if (HI_NULL == pstSensorMaxResolution)
     {
-        printf("null pointer when get sensor max resolution \n");
+        fprintf(stderr, "null pointer when get sensor max resolution \n");
         return -1;
     }
 
@@ -354,7 +354,7 @@ HI_U32 cmos_get_isp_default(ISP_CMOS_DEFAULT_S *pstDef)
 {   
     if (HI_NULL == pstDef)
     {
-        printf("null pointer when get isp default value!\n");
+        fprintf(stderr, "null pointer when get isp default value!\n");
         return -1;
     }
 
@@ -396,7 +396,7 @@ HI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
 
 void cmos_fps_set(HI_U8 u8Fps, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 {
-    fprintf(stderr, "DBG: cmos_fps_set(u8Fps = %u)\n", u8Fps);
+    //fprintf(stderr, "DBG: cmos_fps_set(u8Fps = %u)\n", u8Fps);
     int full_lines; // r0
 
     full_lines = 22530 / u8Fps;
@@ -408,7 +408,7 @@ void cmos_fps_set(HI_U8 u8Fps, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 
 static HI_VOID cmos_slow_framerate_set(HI_U16 u16FullLines, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 {
-    fprintf(stderr, "DBG: cmos_slow_framerate_set(u16FullLines = %u)\n", u16FullLines);
+    //fprintf(stderr, "DBG: cmos_slow_framerate_set(u16FullLines = %u)\n", u16FullLines);
     HI_U16 full_lines = u16FullLines;
     if (full_lines > 2253) full_lines = 2253;
 
@@ -469,7 +469,7 @@ static HI_S32 cmos_get_awb_default(AWB_SENSOR_DEFAULT_S *pstAwbSnsDft)
     //fprintf(stderr, "DBG: cmos_get_awb_default(*)\n");
     if (HI_NULL == pstAwbSnsDft)
     {
-        printf("null pointer when get awb default value!\n");
+        fprintf(stderr, "null pointer when get awb default value!\n");
         return -1;
     }
 
@@ -516,7 +516,7 @@ int sensor_register_callback(void)
     s32Ret = HI_MPI_ISP_SensorRegCallBack(JXH42_ID, &stIspRegister);
     if (s32Ret)
     {   
-        printf("sensor register callback function failed!\n");
+        fprintf(stderr, "sensor register callback function failed!\n");
         return s32Ret;
     }
 
@@ -526,7 +526,7 @@ int sensor_register_callback(void)
     s32Ret = HI_MPI_AE_SensorRegCallBack(&stLib, JXH42_ID, &stAeRegister);
     if (s32Ret)
     {   
-        printf("sensor register callback function to ae lib failed!\n");
+        fprintf(stderr, "sensor register callback function to ae lib failed!\n");
         return s32Ret;
     }
 
@@ -536,7 +536,7 @@ int sensor_register_callback(void)
     s32Ret = HI_MPI_AWB_SensorRegCallBack(&stLib, JXH42_ID, &stAwbRegister);
     if (s32Ret)
     {
-        printf("sensor register callback function to ae lib failed!\n");
+        fprintf(stderr, "sensor register callback function to ae lib failed!\n");
         return s32Ret;
     }
 
@@ -551,7 +551,7 @@ int sensor_unregister_callback(void)
     s32Ret = HI_MPI_ISP_SensorUnRegCallBack(JXH42_ID);
     if (s32Ret)
     {
-        printf("sensor unregister callback function failed!\n");
+        fprintf(stderr, "sensor unregister callback function failed!\n");
         return s32Ret;
     }
 
@@ -560,7 +560,7 @@ int sensor_unregister_callback(void)
     s32Ret = HI_MPI_AE_SensorUnRegCallBack(&stLib, JXH42_ID);
     if (s32Ret)
     {
-        printf("sensor unregister callback function to ae lib failed!\n");
+        fprintf(stderr, "sensor unregister callback function to ae lib failed!\n");
         return s32Ret;
     }
 
@@ -569,7 +569,7 @@ int sensor_unregister_callback(void)
     s32Ret = HI_MPI_AWB_SensorUnRegCallBack(&stLib, JXH42_ID);
     if (s32Ret)
     {
-        printf("sensor unregister callback function to ae lib failed!\n");
+        fprintf(stderr, "sensor unregister callback function to ae lib failed!\n");
         return s32Ret;
     }
 
