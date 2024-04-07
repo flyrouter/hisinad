@@ -33,7 +33,7 @@ HI_U8 gu8SensorMode = 0; // which WDR mode default?
 
 HI_VOID cmos_set_wdr_mode(HI_U8 u8Mode)
 {
-    fprintf(stderr, "DBG: cmos_set_wdr_mode(%d)\n", u8Mode);
+    //fprintf(stderr, "DBG: cmos_set_wdr_mode(%d)\n", u8Mode);
     if (u8Mode >= 2)
     {
         fprintf(stderr, "NO support for this mode!");
@@ -46,7 +46,7 @@ HI_VOID cmos_set_wdr_mode(HI_U8 u8Mode)
 
 static HI_S32 cmos_get_ae_default(AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 {
-    fprintf(stderr, "DBG: cmos_get_ae_default(*)\n");
+    //fprintf(stderr, "DBG: cmos_get_ae_default(*)\n");
     if (HI_NULL == pstAeSnsDft)
     {
         printf("null pointer when get ae default value!\n");
@@ -105,7 +105,7 @@ HI_U32 cmos_get_isp_black_level(ISP_CMOS_BLACK_LEVEL_S *pstBlackLevel)
         return -1;
     }
 
-    fprintf(stderr, "DBG: cmos_get_isp_black_level(*)\n");
+    //fprintf(stderr, "DBG: cmos_get_isp_black_level(*)\n");
 
     pstBlackLevel->bUpdate = HI_FALSE;
     pstBlackLevel->au16BlackLevel[0] = 0x14;
@@ -140,18 +140,25 @@ static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
         fprintf(stderr, "\tgaininfo = %u\n", gaininfo);
     }
 
-    fprintf(stderr, "DBG: set explosure to %u\n", u32IntTime);
+    //fprintf(stderr, "DBG: set explosure to %u\n", u32IntTime);
     unsigned explosure = u32IntTime;
     sensor_write_register(0x1, explosure & 0xFF);
     sensor_write_register(0x2, (explosure >> 8) & 0xFF);
 }
 
+static unsigned char additional_gain_vals[4] = { 0, 0x10, 0x20, 0x30 };
+
 static HI_VOID cmos_gains_update(HI_U32 u32Again, HI_U32 u32Dgain)
 {
-    fprintf(stderr, "DBG: cmos_gains_update(%u, %u)\n", u32Again, u32Dgain);
+    //fprintf(stderr, "DBG: cmos_gains_update(%u, %u)\n", u32Again, u32Dgain);
     // TODO large work
-
-    
+    unsigned char new_gain_value = u32Dgain & 0xF;
+    if (u32Again <= 3)
+    {
+        new_gain_value |= additional_gain_vals[u32Again];
+    }
+    //fprintf(stderr, "DBG: podsovyvaem 0x%u gain\n", new_gain_value);
+    sensor_write_register(0x0, new_gain_value);
 }
 
 void sensor_global_init()
@@ -393,7 +400,7 @@ static AWB_AGC_TABLE_S g_stAwbAgcTable =
 
 static HI_S32 cmos_get_awb_default(AWB_SENSOR_DEFAULT_S *pstAwbSnsDft)
 {
-    fprintf(stderr, "DBG: cmos_get_awb_default(*)\n");
+    //fprintf(stderr, "DBG: cmos_get_awb_default(*)\n");
     if (HI_NULL == pstAwbSnsDft)
     {
         printf("null pointer when get awb default value!\n");
@@ -470,6 +477,39 @@ int sensor_register_callback(void)
     return 0;
 }
     
+int sensor_unregister_callback(void)
+{
+    HI_S32 s32Ret;
+    ALG_LIB_S stLib;
+
+    s32Ret = HI_MPI_ISP_SensorUnRegCallBack(JXH42_ID);
+    if (s32Ret)
+    {
+        printf("sensor unregister callback function failed!\n");
+        return s32Ret;
+    }
+
+    stLib.s32Id = 0;
+    strcpy(stLib.acLibName, HI_AE_LIB_NAME);
+    s32Ret = HI_MPI_AE_SensorUnRegCallBack(&stLib, JXH42_ID);
+    if (s32Ret)
+    {
+        printf("sensor unregister callback function to ae lib failed!\n");
+        return s32Ret;
+    }
+
+    stLib.s32Id = 0;
+    strcpy(stLib.acLibName, HI_AWB_LIB_NAME);
+    s32Ret = HI_MPI_AWB_SensorUnRegCallBack(&stLib, JXH42_ID);
+    if (s32Ret)
+    {
+        printf("sensor unregister callback function to ae lib failed!\n");
+        return s32Ret;
+    }
+
+    return 0;
+}
+
 
 
 #ifdef __cplusplus

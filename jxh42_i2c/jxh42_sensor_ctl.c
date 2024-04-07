@@ -23,7 +23,7 @@ int sensor_write_register(int addr, int data)
     i2c_data.addr_byte_num = 1;
     i2c_data.data_byte_num = 1;
 
-    fprintf(stderr, "DBG: sensor_write_register(0x%x, 0x%x)\n", i2c_data.reg_addr, i2c_data.data);
+    //fprintf(stderr, "DBG: sensor_write_register(0x%x, 0x%x)\n", i2c_data.reg_addr, i2c_data.data);
 
     int ret = ioctl(fd, CMD_I2C_WRITE, &i2c_data);    
     if (ret)
