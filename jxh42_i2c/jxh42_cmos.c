@@ -542,6 +542,8 @@ int sensor_register_callback(void)
 
     return 0;
 }
+
+void sensor_hi_i2c_close();
     
 int sensor_unregister_callback(void)
 {
@@ -572,6 +574,8 @@ int sensor_unregister_callback(void)
         fprintf(stderr, "sensor unregister callback function to ae lib failed!\n");
         return s32Ret;
     }
+
+    sensor_hi_i2c_close();
 
     return 0;
 }

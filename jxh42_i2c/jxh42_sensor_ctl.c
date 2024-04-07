@@ -7,13 +7,30 @@
 
 #include "hi_i2c.h"
 
+static int hi_i2c_fd = -1;
+
+void sensor_hi_i2c_close()
+{
+    if (hi_i2c_fd >=0)
+    {
+        close(hi_i2c_fd);
+        hi_i2c_fd = -1;
+    }
+}
+
 int sensor_write_register(int addr, int data)
 {
-    int fd = open("/dev/hi_i2c", 0);
+    int fd = hi_i2c_fd;
     if (fd < 0)
     {
-        fprintf(stderr, "Open /dev/hi_i2c error!");
-        return -1;
+        fd = open("/dev/hi_i2c", 0);
+        if (fd < 0)
+        {
+            fprintf(stderr, "Open /dev/hi_i2c error!");
+            return -1;
+        }
+
+        hi_i2c_fd = fd;
     }
 
     I2C_DATA_S i2c_data;    
@@ -28,10 +45,8 @@ int sensor_write_register(int addr, int data)
     int ret = ioctl(fd, CMD_I2C_WRITE, &i2c_data);    
     if (ret)
     {
-        fprintf(stderr, "\tERROR write!\n");
+        fprintf(stderr, "\tERROR write to 0x%x value 0x%x!\n", addr, data);
     }
-
-    close(fd);
 
     return ret;
 }
