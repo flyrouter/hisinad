@@ -10,6 +10,7 @@
 #include "mpi_ae.h"
 #include "mpi_awb.h"
 #include "mpi_af.h"
+#include "mpi_vpss.h"
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -132,12 +133,77 @@ unsigned int cmos_get_gaininfo()
     return gain_val;
 }
 
+void cmos_Set_DPC(HI_U16 pxThresh, HI_U16 pxSlope)
+{
+    ISP_DP_ATTR_S dp;
+
+    HI_MPI_ISP_GetDefectPixelAttr(&dp);
+    dp.bEnableDynamic = HI_TRUE;
+    dp.u16DynamicBadPixelThresh = pxThresh;
+    dp.u16DynamicBadPixelSlope = pxSlope;
+    HI_MPI_ISP_SetDefectPixelAttr(&dp);
+}
+
+void cmos_Set_DRC(HI_BOOL en, HI_BOOL manual, HI_U32 strength_target)
+{
+    ISP_DRC_ATTR_S drc;
+
+    HI_MPI_ISP_GetDRCAttr(&drc);
+    drc.bDRCEnable = en;
+    drc.bDRCManualEnable = manual;
+    drc.u32StrengthTarget = strength_target;
+    HI_MPI_ISP_SetDRCAttr(&drc);
+}
+
+void cmos_set_3Ddenoise(HI_U32 sf, HI_U32 tf, HI_U32 chroma)
+{
+    VPSS_GRP_PARAM_S grp_param;
+
+    HI_MPI_VPSS_GetGrpParam(0, &grp_param);
+    grp_param.u32SfStrength = sf;
+    grp_param.u32TfStrength = tf;
+    grp_param.u32ChromaRange = chroma;
+    HI_MPI_VPSS_SetGrpParam(0, &grp_param);
+}
+
 static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
 {
     unsigned gaininfo = cmos_get_gaininfo();
     if (gaininfo)
     {
         fprintf(stderr, "\tgaininfo = %u\n", gaininfo);
+        cmos_Set_DPC(40 - gaininfo, 38 * gaininfo + 1111);
+
+        if (gaininfo <= 2)
+        {
+            cmos_Set_DRC(HI_TRUE, HI_TRUE, 64);
+            cmos_set_3Ddenoise(28, 7, 60);
+        }
+        else if (gaininfo <= 4)
+        {
+            cmos_Set_DRC(HI_TRUE, HI_TRUE, 48);
+            cmos_set_3Ddenoise(32, 8, 80);
+        }
+        else if (gaininfo <= 6)
+        {
+            cmos_Set_DRC(HI_TRUE, HI_TRUE, 32);
+            cmos_set_3Ddenoise(36, 9, 100);
+        }
+        else if (gaininfo <= 8)
+        {
+            cmos_Set_DRC(HI_TRUE, HI_TRUE, 16);
+            cmos_set_3Ddenoise(40, 10, 120);
+        }
+        else if (gaininfo > 12)
+        {
+            cmos_Set_DRC(HI_FALSE, HI_FALSE, 0);
+            cmos_set_3Ddenoise(60, 12, 160);
+        }
+        else // 9...11
+        {
+            cmos_Set_DRC(HI_TRUE, HI_TRUE, 8);
+            cmos_set_3Ddenoise(50, 11, 140);
+        }
     }
 
     //fprintf(stderr, "DBG: set explosure to %u\n", u32IntTime);
