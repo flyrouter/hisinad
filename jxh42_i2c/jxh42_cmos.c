@@ -116,16 +116,42 @@ HI_U32 cmos_get_isp_black_level(ISP_CMOS_BLACK_LEVEL_S *pstBlackLevel)
     return 0;
 }
 
+static unsigned old_gain_val = 0;
+
+unsigned int cmos_get_gaininfo()
+{
+    ISP_INNER_STATE_INFO_EX_S inf;
+    HI_MPI_ISP_QueryInnerStateInfoEx(&inf);
+//    fprintf(stderr, "\tu32AnalogGain, u32ISPDigitalGain = %u, %u\n", inf.u32AnalogGain, inf.u32ISPDigitalGain);
+    unsigned gain_val = (inf.u32AnalogGain * inf.u32ISPDigitalGain) >> 20;
+
+    if (old_gain_val == gain_val) return 0;
+
+    old_gain_val = gain_val;
+
+    return gain_val;
+}
+
 static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
 {
-    fprintf(stderr, "DBG: cmos_inttime_update(%u)\n", u32IntTime);
-    // TODO large work
+    unsigned gaininfo = cmos_get_gaininfo();
+    if (gaininfo)
+    {
+        fprintf(stderr, "\tgaininfo = %u\n", gaininfo);
+    }
+
+    fprintf(stderr, "DBG: set explosure to %u\n", u32IntTime);
+    unsigned explosure = u32IntTime;
+    sensor_write_register(0x1, explosure & 0xFF);
+    sensor_write_register(0x2, (explosure >> 8) & 0xFF);
 }
 
 static HI_VOID cmos_gains_update(HI_U32 u32Again, HI_U32 u32Dgain)
 {
     fprintf(stderr, "DBG: cmos_gains_update(%u, %u)\n", u32Again, u32Dgain);
     // TODO large work
+
+    
 }
 
 void sensor_global_init()
