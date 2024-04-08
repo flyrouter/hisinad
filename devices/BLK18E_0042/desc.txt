@@ -1,0 +1,4 @@
+Процессор: Hi3518ev100
+Сенсор: Silicon Optronics JX-H42
+IRcut gpio: 38,39
+

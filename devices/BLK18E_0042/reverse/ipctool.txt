@@ -1,0 +1,71 @@
+# ./ipctool-2024-03-26 
+
+---
+chip:
+  vendor: HiSilicon
+  model: 3518EV100
+board:
+  vendor: Xiongmai
+  param: HI3518E_50H10L_S39
+  cloudId: e59fe45eaa5ca3f8
+  possible-IR-cut-GPIO: 13,26,38,39,41,43,75
+ethernet:
+  mac: "00:12:16:d0:12:2b"
+  u-mdio-phyaddr: 1
+  phy-id: 0x02430c54
+  d-mdio-phyaddr: 0
+  phy-mode: mii
+rom:
+- type: nor
+  block: 64K
+  partitions:
+    - name: boot
+      size: 0x40000
+      sha1: 741a6187
+      contains:
+        - name: xmcrypto
+          offset: 0x1fc00
+        - name: uboot-env
+          offset: 0x30000
+    - name: romfs
+      size: 0x370000
+      path: /,cramfs
+      sha1: aae3bca9
+    - name: user
+      size: 0x280000
+      path: /usr,squashfs
+      sha1: 68c7d211
+    - name: web
+      size: 0x140000
+      path: /mnt/web,squashfs
+      sha1: 00ed8097
+    - name: custom
+      size: 0x40000
+      path: /mnt/custom,cramfs
+      sha1: 2035f55c
+    - name: mtd
+      size: 0x50000
+      path: /mnt/mtd,jffs2,rw
+  size: 8M
+  addr-mode: 3-byte
+ram:
+  total: 64M
+  media: 20M
+firmware:
+  u-boot: "2010.06 (Apr 07 2012 - 17:11:2)"
+  kernel: "3.0.8 (Mon Jan 18 14:29:26 CST 2016)"
+  toolchain: gcc version 4.4.1 (Hisilicon_v100(gcc4.4-290+uclibc_0.9.32.1+eabi+linuxpthread)) 
+  libc: uClibc 0.9.32.1
+  sdk: "Hi3518_MPP_V1.0.A.0  (Apr  1 2015, 19:36:33)"
+  main-app: /usr/bin/Sofia
+sensors:
+- vendor: Silicon Optronics
+  model: JXH42
+  control:
+    bus: 0
+    type: i2c
+    addr: 0x60
+  data:
+    type: DC
+  clock: 24MHz
+
