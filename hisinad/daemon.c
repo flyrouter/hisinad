@@ -71,6 +71,12 @@ int main(int argc, char** argv)
         return ret;
     }
 
+    if (sc.vb_cnt < 4)
+    {
+        log_warn("WARNING! vb_cnt is not set or less than 4, setting it to default 5 buffers...");
+        sc.vb_cnt = 5;
+    }
+
     if (deamon_mode)
     {
         log_info("Daemonize and log to /tmp/hisinad.log");
