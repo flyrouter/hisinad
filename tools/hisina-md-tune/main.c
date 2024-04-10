@@ -11,10 +11,15 @@
 #include <cfg/sensor_config.h>
 #include <hitiny/hitiny_sys.h>
 #include <hitiny/hitiny_vda.h>
+#include <hitiny/hitiny_venc.h>
 #include <stdint.h>
 #include <cfg/vdacfg.h>
 
+int mjpeg_snap_init(const struct vda_cfg_s* vc);
+void mjpeg_snap_done(const struct vda_cfg_s* vc);
 
+
+int tuner_mode = 0;
 int stop_flag = 0;
 struct vda_cfg_s vda_cfg = { 0 };
 
@@ -47,7 +52,6 @@ void print_error(int ret)
         }
     }
 }
-
 
 void print_md_data(const VDA_DATA_S *pstVdaData)
 {
@@ -85,7 +89,7 @@ struct __ev_vda_md_watcher_s
 
 struct __ev_vda_md_watcher_s* mdw = 0;
 
-static void __md_cb(struct ev_loop *loop, ev_io* _w, int revents)
+static void __md_tuner_cb(struct ev_loop *loop, ev_io* _w, int revents)
 {
     struct __ev_vda_md_watcher_s* mdw = (struct __ev_vda_md_watcher_s*)_w;
 
@@ -104,7 +108,51 @@ static void __md_cb(struct ev_loop *loop, ev_io* _w, int revents)
     hitiny_MPI_VDA_ReleaseData(mdw->VdaChn,&stVdaData);
 }
 
-void test_md_init(struct ev_loop* loop)
+static unsigned mjpeg_running = 0;
+
+static void __md_work_cb(struct ev_loop *loop, ev_io* _w, int revents)
+{
+    struct __ev_vda_md_watcher_s* mdw = (struct __ev_vda_md_watcher_s*)_w;
+
+    VDA_DATA_S stVdaData;
+    int s32Ret = hitiny_MPI_VDA_GetData(mdw->VdaChn, &stVdaData, HI_FALSE);
+
+    if (!s32Ret)
+    {
+        unsigned obj_cnt = stVdaData.unData.stMdData.bObjValid ? stVdaData.unData.stMdData.stObjData.u32ObjNum : 0;
+
+        if (obj_cnt || (stVdaData.unData.stMdData.u32AlarmPixCnt > 100))
+        {
+            if (!mjpeg_running)
+            {
+                log_info("AlarmPixelCount=%d, objcnt=%u: MJPEG ON", stVdaData.unData.stMdData.u32AlarmPixCnt, obj_cnt);
+            }
+
+            mjpeg_running = vda_cfg.md.VdaIntvl;
+        }
+
+        if (!obj_cnt && (stVdaData.unData.stMdData.u32AlarmPixCnt < 100))
+        {
+            if (mjpeg_running)
+            {
+                log_info("going to stop video: %u", mjpeg_running);
+                mjpeg_running--;
+                if (!mjpeg_running)
+                {
+                    log_info("MJPEG STOP");
+                }
+            }
+        }
+    }
+    else
+    {
+        log_error("MPI_VDA_GetData returned error 0x%x", s32Ret);
+    }
+
+    hitiny_MPI_VDA_ReleaseData(mdw->VdaChn,&stVdaData);
+}
+
+void vda_md_init(struct ev_loop* loop)
 {
     VDA_CHN_ATTR_S stVdaChnAttr;
 
@@ -165,11 +213,18 @@ void test_md_init(struct ev_loop* loop)
     mdw = (struct __ev_vda_md_watcher_s*)malloc(sizeof(struct __ev_vda_md_watcher_s));
     if (!mdw) return;
     mdw->VdaChn = vda_cfg.md.VdaChn;
-    ev_io_init(&(mdw->_ev_io), __md_cb, fd, EV_READ);
+    if (tuner_mode)
+    {
+        ev_io_init(&(mdw->_ev_io), __md_tuner_cb, fd, EV_READ);
+    }
+    else
+    {
+        ev_io_init(&(mdw->_ev_io), __md_work_cb, fd, EV_READ);
+    }
     ev_io_start(loop, &(mdw->_ev_io));
 }
 
-void test_md_done()
+void vda_md_done()
 {
     int s32Ret = hitiny_MPI_VDA_StopRecvPic(vda_cfg.md.VdaChn);
     if(s32Ret != HI_SUCCESS)
@@ -204,15 +259,28 @@ static void timeout_cb(struct ev_loop *loop, ev_timer* w, int revents)
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
+    int no_daemon_mode = 0;
+
+    if (argc < 2 || !strncmp(argv[argc - 1], "--", 2))
     {
-        fprintf(stderr, "Usage: %s vda-md.ini [N]\n", argv[0]);
-        fprintf(stderr, "Read MD config, watch for events and dump info.\n");
-        fprintf(stderr, "If N is set, write at most N snap-n.jpg files (e.g. snap-000.jpg, snap-001.jpg...)\n");
+        fprintf(stderr, "Usage: %s [--tuner|--no-daemon] vda-md.ini\n", argv[0]);
+        fprintf(stderr, " --tuner: tuner mode, read MD config, watch for events and dump info.\n");
+        fprintf(stderr, " --no-daemon: work, but do not fork, logs to stderr.\n");
         return -1;
     }
 
-    int ret = vda_cfg_read(argv[1], &vda_cfg);
+    if (!strcmp(argv[1], "--tuner"))
+    {
+        tuner_mode = 1;
+    }
+    else if (!strcmp(argv[1], "--no-daemon"))
+    {
+        no_daemon_mode = 1;
+    }
+
+    fprintf(stderr, "Starting with config '%s'...\n", argv[argc - 1]);
+
+    int ret = vda_cfg_read(argv[argc - 1], &vda_cfg);
 
     if (ret < 0)
     {
@@ -220,6 +288,7 @@ int main(int argc, char** argv)
         return ret;
     }
 
+    hitiny_MPI_VENC_Init();
     hitiny_vda_init();
 
     signal(SIGINT, action_on_signal);
@@ -232,7 +301,14 @@ int main(int argc, char** argv)
     timeout_watcher.repeat = 2.;
     ev_timer_start(loop, &timeout_watcher);
 
-    test_md_init(loop);
+    vda_md_init(loop);
+
+    ret = mjpeg_snap_init(&vda_cfg);
+    if (ret < 0)
+    {
+        log_crit("Can't start MJPEG snap, stop!");
+        goto FINISH;
+    }
 
     do
     {
@@ -240,12 +316,16 @@ int main(int argc, char** argv)
         if (stop_flag) break;
     }
     while (ret);
-    
-    test_md_done();
+
+    mjpeg_snap_done(&vda_cfg);    
+
+FINISH:
+    vda_md_done();
     free(mdw);
     mdw = 0;
 
     hitiny_vda_done();
+    hitiny_MPI_VENC_Done();
 
     return 0;
 }

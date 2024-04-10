@@ -7,7 +7,7 @@
 
 
 #define SECTION_vi          1
-#define SECTION_snap        5
+#define SECTION_mjpeg_snap  5
 #define SECTION_md          10
 
 static int __vda_cfg_current_section = 0;
@@ -19,7 +19,7 @@ static char __vda_cfg_error_value[256] = { 0 };
 static int __vda_cfg_read_section_cb(const char* s)
 {
     ADD_SECTION(vi)
-    ADD_SECTION(snap)
+    ADD_SECTION(mjpeg_snap)
     ADD_SECTION(md)
 
     snprintf(__vda_cfg_error_value, 256, "%s", s);
@@ -34,8 +34,8 @@ static struct vda_cfg_s* __current_vc;
         char* endptr;                                                   \
         dest = strtol(v, &endptr, 10);                                  \
         if (!*endptr) return CFG_PROC_OK;                               \
-        snprintf(__vda_cfg_error_key, 256, "%s", k);                 \
-        snprintf(__vda_cfg_error_value, 256, "%s", v);               \
+        snprintf(__vda_cfg_error_key, 256, "%s", k);                    \
+        snprintf(__vda_cfg_error_value, 256, "%s", v);                  \
         return CFG_PROC_VALUE_BAD;                                      \
     }
 
@@ -43,9 +43,27 @@ static struct vda_cfg_s* __current_vc;
         char* endptr;                                                   \
         dest = strtoul(v, &endptr, 10);                                 \
         if (!*endptr) return CFG_PROC_OK;                               \
-        snprintf(__vda_cfg_error_key, 256, "%s", k);                 \
-        snprintf(__vda_cfg_error_value, 256, "%s", v);               \
+        snprintf(__vda_cfg_error_key, 256, "%s", k);                    \
+        snprintf(__vda_cfg_error_value, 256, "%s", v);                  \
         return CFG_PROC_VALUE_BAD;                                      \
+    }
+
+#define KEYVAL_PARAM_ENUM(key, dest, pvs) if (strcasecmp(key, k) == 0) {        \
+        unsigned n = 0;                                                         \
+        while (pvs[n]) {                                                        \
+            if (strcmp(pvs[n], v) == 0) {                                       \
+                dest = n; return CFG_PROC_OK;                                   \
+            }                                                                   \
+            n++;                                                                \
+        }                                                                       \
+        char* endptr;                                                           \
+        unsigned x = strtoul(v, &endptr, 10);                                   \
+        if (!*endptr && (n > x)) {                                              \
+            dest = x; return CFG_PROC_OK;                                       \
+        }                                                                       \
+        snprintf(__vda_cfg_error_key, 256, "%s", k);                            \
+        snprintf(__vda_cfg_error_value, 256, "%s", v);                          \
+        return CFG_PROC_VALUE_BAD;                                              \
     }
 
 
@@ -60,14 +78,23 @@ static int __vda_cfg_read_keyval_cb_vi(const char* k, const char* v)
     return CFG_PROC_KEY_BAD;
 }
 
-static int __vda_cfg_read_keyval_cb_snap(const char* k, const char* v)
-{
-    KEYVAL_PARAM_UL_dec("vpss_chnl_id", __current_vc->snap.vpss_chnl_id);
-    KEYVAL_PARAM_UL_dec("grp_id", __current_vc->snap.grp_id);
-    KEYVAL_PARAM_UL_dec("venc_chnl_id", __current_vc->snap.venc_chnl_id);
+const char *cfg_daemon_vals_vpss_chn[] = { "VPSS_CHN_CHN0", "VPSS_CHN_CHN1", "VPSS_CHN_BYPASS", 0 };
 
-    KEYVAL_PARAM_UL_dec("width", __current_vc->snap.width);
-    KEYVAL_PARAM_UL_dec("height", __current_vc->snap.height);
+static int __vda_cfg_read_keyval_cb_mjpeg_snap(const char* k, const char* v)
+{
+    KEYVAL_PARAM_ENUM("vpss_chn", __current_vc->mjpeg_snap.vpss_chn, cfg_daemon_vals_vpss_chn);
+    KEYVAL_PARAM_UL_dec("grp_id", __current_vc->mjpeg_snap.grp_id);
+    KEYVAL_PARAM_UL_dec("venc_chn_id", __current_vc->mjpeg_snap.venc_chn_id);
+
+    KEYVAL_PARAM_UL_dec("width", __current_vc->mjpeg_snap.width);
+    KEYVAL_PARAM_UL_dec("height", __current_vc->mjpeg_snap.height);
+
+    KEYVAL_PARAM_UL_dec("vbr_stat_time", __current_vc->mjpeg_snap.vbr_stat_time);
+    KEYVAL_PARAM_UL_dec("vbr_vi_frm_rate", __current_vc->mjpeg_snap.vbr_vi_frm_rate);
+    KEYVAL_PARAM_UL_dec("vbr_target_frm_rate", __current_vc->mjpeg_snap.vbr_target_frm_rate);
+    KEYVAL_PARAM_UL_dec("vbr_Max_bitrate", __current_vc->mjpeg_snap.vbr_Max_bitrate);
+    KEYVAL_PARAM_UL_dec("vbr_Max_Qfactor", __current_vc->mjpeg_snap.vbr_Max_Qfactor);
+    KEYVAL_PARAM_UL_dec("vbr_Min_Qfactor", __current_vc->mjpeg_snap.vbr_Min_Qfactor);
 
     snprintf(__vda_cfg_error_key, 256, "%s", k);
     return CFG_PROC_KEY_BAD;
@@ -91,7 +118,7 @@ static int __vda_cfg_read_keyval_cb(const char* k, const char* v)
     switch (__vda_cfg_current_section)
     {
         KEYVAL_CASE(vi)
-        KEYVAL_CASE(snap)
+        KEYVAL_CASE(mjpeg_snap)
         KEYVAL_CASE(md)
     }
     return CFG_PROC_OK;
@@ -101,6 +128,10 @@ int vda_cfg_read(const char* fname, struct vda_cfg_s* vc)
 {
     __vda_cfg_current_section = 0;
     __current_vc = vc;
+
+    memset(vc, 0, sizeof(struct vda_cfg_s));
+
+    vc->mjpeg_snap.vpss_chn = VPSS_CHN_UNSET;
 
     return cfg_proc_read(fname, __vda_cfg_read_section_cb, __vda_cfg_read_keyval_cb);
 }

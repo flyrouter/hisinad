@@ -8,14 +8,31 @@ struct vda_cfg_vi_chn_s
     unsigned height;
 };
 
-struct snap_s
+enum VPSS_CHN_E
 {
-    unsigned vpss_chnl_id;
+    VPSS_CHN_UNSET  = -1,
+    VPSS_CHN_CHN0   = 0,
+    VPSS_CHN_CHN1   = 1,
+    VPSS_CHN_BYPASS = 2,
+};
+
+extern const char *cfg_daemon_vals_vpss_chn[];
+
+struct mjpeg_snap_s
+{
+    enum VPSS_CHN_E vpss_chn;
     unsigned grp_id;
-    unsigned venc_chnl_id;
+    unsigned venc_chn_id;
 
     unsigned width;
     unsigned height;
+
+    unsigned vbr_stat_time;
+    unsigned vbr_vi_frm_rate;
+    unsigned vbr_target_frm_rate;
+    unsigned vbr_Max_bitrate;
+    unsigned vbr_Max_Qfactor;
+    unsigned vbr_Min_Qfactor;
 };
 
 struct vda_md_s
@@ -29,7 +46,7 @@ struct vda_md_s
 struct vda_cfg_s
 {
     struct vda_cfg_vi_chn_s vi;
-    struct snap_s snap;
+    struct mjpeg_snap_s mjpeg_snap;
     struct vda_md_s md;
 };
 
