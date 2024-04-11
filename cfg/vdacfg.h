@@ -33,6 +33,10 @@ struct mjpeg_snap_s
     unsigned vbr_Max_bitrate;
     unsigned vbr_Max_Qfactor;
     unsigned vbr_Min_Qfactor;
+
+    char upload_url[256];
+    char upload_username[64];
+    char upload_password[64];
 };
 
 struct vda_md_s

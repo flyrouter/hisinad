@@ -16,7 +16,7 @@
 
 /* stream buffers */
 
-#define BUFFERS_TOTAL_COUNT 8
+#define BUFFERS_TOTAL_COUNT 32
 
 struct stream_buffer_t
 {
@@ -32,8 +32,8 @@ static unsigned __upload_buffers_cur_write = 0;
 
 struct stream_buffer_t* __upload_buffers_get_write(unsigned sz)
 {
-    unsigned __new_cur_write = (__upload_buffers_cur_write + 1) % BUFFERS_TOTAL_COUNT;
-    if (__new_cur_write == __upload_buffers_cur_read) return 0;
+    unsigned __next_cur_write = (__upload_buffers_cur_write + 1) % BUFFERS_TOTAL_COUNT;
+    if (__next_cur_write == __upload_buffers_cur_read) return 0;
 
     struct stream_buffer_t* ret = &__upload_buffers[__upload_buffers_cur_write];
 
@@ -42,8 +42,6 @@ struct stream_buffer_t* __upload_buffers_get_write(unsigned sz)
         //log_info("too small (sz_max = %u), need %u", ret->sz_max, sz);
         free(ret->ptr);
         ret->ptr = 0;
-        ret->pos = 0;
-        ret->sz = 0;
         ret->sz_max = 0;
     }
 
@@ -52,14 +50,12 @@ struct stream_buffer_t* __upload_buffers_get_write(unsigned sz)
         ret->sz_max = (sz & 0xFFFFF000) + 0x1000;
         //log_info("malloc %u, needs %u", ret->sz_max, sz);
         ret->ptr = malloc(ret->sz_max);
-        ret->pos = 0;
-        ret->sz = 0;
     }
 
     ret->pos = 0;
     ret->sz = 0;
 
-    __upload_buffers_cur_write = __new_cur_write;
+    __upload_buffers_cur_write = __next_cur_write;
 
     return ret;
 }
@@ -86,7 +82,7 @@ extern evcurl_processor_t* g_evcurl_proc;
 
 CURL *g_uploader_easy_handler = 0;
 
-static size_t xxxREADER(char *buffer, size_t size, size_t nitems, void *userdata)
+static size_t _mjpeg_snap_READ_cb(char *buffer, size_t size, size_t nitems, void *userdata)
 {
     struct stream_buffer_t* data_buf = __upload_buffers_get_read();
     
@@ -115,6 +111,12 @@ static size_t xxxREADER(char *buffer, size_t size, size_t nitems, void *userdata
 
 static void PUT_mjpeg_snap_req_end_cb(evcurl_req_result_t* res, void* src_req_data)
 {
+    if (100 == res->response_code)
+    {
+        log_info("RESPONSE 100 from server, ignoring...");
+        return;
+    }
+
     g_uploader_easy_handler = 0;
 
     log_info("PUT mjpeg snap Req DONE: %d", res->result);
@@ -169,6 +171,7 @@ static int init_snap_machine_checkcfg(const struct vda_cfg_s* vc)
 
 static ev_io venc_mjpeg_snap_ev_io;
 static int venc_mjpeg_snap_chn = -1;
+static const char* mjpeg_snap_upload_url = 0;
 
 static void __venc_mjpeg_snap_cb(struct ev_loop *loop, ev_io* _w, int revents)
 {
@@ -318,6 +321,7 @@ int mjpeg_snap_init(const struct vda_cfg_s* vc, struct ev_loop* loop)
     ev_io_start(loop, &venc_mjpeg_snap_ev_io);
 
     venc_mjpeg_snap_chn = vc->mjpeg_snap.venc_chn_id;
+    mjpeg_snap_upload_url = vc->mjpeg_snap.upload_url;
 
     return 0;
 }
@@ -326,14 +330,20 @@ void mjpeg_snap_start_record()
 {
     hitiny_MPI_VENC_StartRecvPic(venc_mjpeg_snap_chn);
 
+    if (g_uploader_easy_handler)
+    {
+        log_warn("starting to record when old connection is active");
+        return;
+    }
+
     evcurl_upload_chunked_req_t *uploader = (evcurl_upload_chunked_req_t*)malloc(sizeof(evcurl_upload_chunked_req_t));
     memset(uploader, 0, sizeof(evcurl_upload_chunked_req_t));
 
     uploader->timeout = 5;
     uploader->connect_timeout = 2;
 
-    uploader->url = "";
-    uploader->read_cb = xxxREADER;
+    uploader->url = mjpeg_snap_upload_url;
+    uploader->read_cb = _mjpeg_snap_READ_cb;
 
     evcurl_new_UPLOAD_chunked(g_evcurl_proc, uploader, PUT_mjpeg_snap_req_end_cb, &g_uploader_easy_handler);
 }

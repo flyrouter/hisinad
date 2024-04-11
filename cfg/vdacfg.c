@@ -96,6 +96,10 @@ static int __vda_cfg_read_keyval_cb_mjpeg_snap(const char* k, const char* v)
     KEYVAL_PARAM_UL_dec("vbr_Max_Qfactor", __current_vc->mjpeg_snap.vbr_Max_Qfactor);
     KEYVAL_PARAM_UL_dec("vbr_Min_Qfactor", __current_vc->mjpeg_snap.vbr_Min_Qfactor);
 
+    KEYVAL_PARAM_COPY_STR("upload_url", __current_vc->mjpeg_snap.upload_url, 256);
+    KEYVAL_PARAM_COPY_STR("upload_username", __current_vc->mjpeg_snap.upload_username, 64);
+    KEYVAL_PARAM_COPY_STR("upload_password", __current_vc->mjpeg_snap.upload_password, 64);
+
     snprintf(__vda_cfg_error_key, 256, "%s", k);
     return CFG_PROC_KEY_BAD;
 }

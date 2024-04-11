@@ -124,7 +124,9 @@ static void __md_work_cb(struct ev_loop *loop, ev_io* _w, int revents)
     {
         unsigned obj_cnt = stVdaData.unData.stMdData.bObjValid ? stVdaData.unData.stMdData.stObjData.u32ObjNum : 0;
 
-        if (obj_cnt || (stVdaData.unData.stMdData.u32AlarmPixCnt > 100))
+        log_info("AlarmPixCnt %u, obj %u", stVdaData.unData.stMdData.u32AlarmPixCnt, obj_cnt);
+
+        if (obj_cnt && (stVdaData.unData.stMdData.u32AlarmPixCnt > 100))
         {
             if (!mjpeg_running)
             {
@@ -135,11 +137,11 @@ static void __md_work_cb(struct ev_loop *loop, ev_io* _w, int revents)
             mjpeg_running = vda_cfg.md.VdaIntvl;
         }
 
-        if (!obj_cnt && (stVdaData.unData.stMdData.u32AlarmPixCnt < 100))
+        if (!obj_cnt && (stVdaData.unData.stMdData.u32AlarmPixCnt < 30))
         {
             if (mjpeg_running)
             {
-                log_info("going to stop video: %u", mjpeg_running);
+                //log_info("going to stop video: %u", mjpeg_running);
                 mjpeg_running--;
                 if (!mjpeg_running)
                 {
@@ -277,6 +279,7 @@ int main(int argc, char** argv)
     if (!strcmp(argv[1], "--tuner"))
     {
         tuner_mode = 1;
+        no_daemon_mode = 1;
     }
     else if (!strcmp(argv[1], "--no-daemon"))
     {
@@ -291,6 +294,16 @@ int main(int argc, char** argv)
     {
         print_error(ret);
         return ret;
+    }
+
+    if (!no_daemon_mode)
+    {
+        char buf[128];
+        snprintf(buf, 128, "/tmp/hisina-md.log");
+        log_info("Daemonize and log to %s", buf);
+        log_create(buf, LOG_info);
+
+        if (fork()) exit(0);
     }
 
     hitiny_MPI_VENC_Init();
