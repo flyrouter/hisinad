@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <ev.h>
-
+#include <evcurl/evcurl.h>
 #include <signal.h>
 #include <unistd.h>
 #include <aux/logger.h>
@@ -15,9 +15,12 @@
 #include <stdint.h>
 #include <cfg/vdacfg.h>
 
-int mjpeg_snap_init(const struct vda_cfg_s* vc);
+int mjpeg_snap_init(const struct vda_cfg_s* vc, struct ev_loop* loop);
 void mjpeg_snap_done(const struct vda_cfg_s* vc);
+void mjpeg_snap_start_record();
+void mjpeg_snap_stop_record();
 
+evcurl_processor_t* g_evcurl_proc = 0;
 
 int tuner_mode = 0;
 int stop_flag = 0;
@@ -126,6 +129,7 @@ static void __md_work_cb(struct ev_loop *loop, ev_io* _w, int revents)
             if (!mjpeg_running)
             {
                 log_info("AlarmPixelCount=%d, objcnt=%u: MJPEG ON", stVdaData.unData.stMdData.u32AlarmPixCnt, obj_cnt);
+                mjpeg_snap_start_record();
             }
 
             mjpeg_running = vda_cfg.md.VdaIntvl;
@@ -139,6 +143,7 @@ static void __md_work_cb(struct ev_loop *loop, ev_io* _w, int revents)
                 mjpeg_running--;
                 if (!mjpeg_running)
                 {
+                    mjpeg_snap_stop_record();
                     log_info("MJPEG STOP");
                 }
             }
@@ -296,6 +301,8 @@ int main(int argc, char** argv)
 
     struct ev_loop* loop = ev_loop_new(EVBACKEND_EPOLL | EVFLAG_NOENV);
 
+    g_evcurl_proc = evcurl_create(loop);
+
     ev_timer timeout_watcher;
     ev_timer_init(&timeout_watcher, timeout_cb, 1., 0.);
     timeout_watcher.repeat = 2.;
@@ -303,7 +310,8 @@ int main(int argc, char** argv)
 
     vda_md_init(loop);
 
-    ret = mjpeg_snap_init(&vda_cfg);
+    ret = mjpeg_snap_init(&vda_cfg, loop);
+
     if (ret < 0)
     {
         log_crit("Can't start MJPEG snap, stop!");
@@ -326,6 +334,10 @@ FINISH:
 
     hitiny_vda_done();
     hitiny_MPI_VENC_Done();
+
+    evcurl_destroy(g_evcurl_proc);
+    g_evcurl_proc = 0;
+
 
     return 0;
 }
