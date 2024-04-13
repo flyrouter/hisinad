@@ -18,6 +18,11 @@ void tinydraw_renderer_ctx_init(tinydraw_renderer_ctx_t* ctx, uint32_t width, ui
     ctx->color_bg = DEFALT_BG_COLOR;
     ctx->color_brush = DEFALT_BRUSH_COLOR;
 
+    ctx->font_draw_colors[0] = BLACK_COLOR;
+    ctx->font_draw_colors[1] = DARK_GREY_COLOR;
+    ctx->font_draw_colors[2] = LIGHT_GREY_COLOR;
+    ctx->font_draw_colors[3] = WHITE_COLOR;
+
     tinydraw_renderer_clear_screen(ctx);
 }
 

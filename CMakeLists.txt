@@ -27,6 +27,7 @@ add_executable(test_cfg_sensor test/test_cfg_sensor.c)
 target_link_libraries(test_cfg_sensor hisinad_cfg)
 
 add_executable(test_tinydraw_0 test/test_tinydraw_0.c tinydraw/image.c tinydraw/save_bmp.c)
+add_executable(test_tinydraw_1 test/test_tinydraw_1.c tinydraw/image.c tinydraw/save_bmp.c tinydraw/monaco32_fixedsize_rawbb_2bpp.c tinydraw/font.c)
 
 add_executable(test_pumap_vi test/test_pumap_vi.c pumap/vi.c)
 

@@ -43,6 +43,8 @@ typedef struct {
 
     tinydraw_color_t color_bg;
     tinydraw_color_t color_brush;
+
+    tinydraw_color_t font_draw_colors[4];
 } tinydraw_renderer_ctx_t;
 
 void tinydraw_renderer_ctx_init(tinydraw_renderer_ctx_t* ctx, uint32_t width, uint32_t height, uint8_t bits_per_px);
