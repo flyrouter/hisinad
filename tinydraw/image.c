@@ -39,6 +39,9 @@ void tinydraw_renderer_clear_screen(tinydraw_renderer_ctx_t* ctx)
 
 void tinydraw_renderer_draw_pixel(tinydraw_renderer_ctx_t* ctx, uint16_t x, uint16_t y, tinydraw_color_t color)
 {
+    if (x >= ctx->width) return;
+    if (y >= ctx->height) return;
+
     unsigned ptr = 2 * (y * ctx->width + x);
     *(uint16_t*)(&ctx->buffer[ptr]) = color;
 }

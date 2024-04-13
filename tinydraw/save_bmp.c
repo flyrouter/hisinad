@@ -52,15 +52,15 @@ void tinydraw_renderer_save_bmp(tinydraw_renderer_ctx_t* ctx, const char* filena
     bmp.bitmapinfoheader.width = ctx->width;
     bmp.bitmapinfoheader.height = -ctx->height;
     bmp.bitmapinfoheader.planes = TINYDRAW_BMP_planes;
-    bmp.bitmapinfoheader.bitsperpixel = JUNK_CTXBBP * 8;
+    bmp.bitmapinfoheader.bitsperpixel = ctx->bits_per_px;
     bmp.bitmapinfoheader.compression = TINYDRAW_BMP_compression;
-    bmp.bitmapinfoheader.imagesize = ctx->height * ctx->width * JUNK_CTXBBP;
+    bmp.bitmapinfoheader.imagesize = ctx->sz_buffer;
     bmp.bitmapinfoheader.ypixelpermeter = TINYDRAW_BMP_ypixelpermeter;
     bmp.bitmapinfoheader.xpixelpermeter = TINYDRAW_BMP_xpixelpermeter;
     bmp.bitmapinfoheader.numcolorspallette = 0;
 
     fwrite(&bmp, 1, sizeof(tinydraw_bmp_t), fp);
-    fwrite(ctx->buffer, 1, ctx->height * ctx->width * JUNK_CTXBBP, fp);
+    fwrite(ctx->buffer, 1, ctx->sz_buffer, fp);
 
     fclose(fp);
 }

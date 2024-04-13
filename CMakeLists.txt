@@ -14,7 +14,7 @@ include_directories(${VENDOR_SDK_INCLUDE_DIRS})
 include_directories(libev)
 
 if (HISILICON_SDK_VERSION STREQUAL "1.0.B.0.")
-add_definitions(-DISP_EX_ATTR -DCONFIG_FONT_FIXED_WIDTH_HEIGHT=1 -DCONFIG_FONT_ENC=1 -DCONFIG_BPP=2)
+add_definitions(-DISP_EX_ATTR)
 endif()
 
 add_library(hisinad_aux STATIC aux/logger.c aux/system.c)
@@ -53,9 +53,6 @@ target_link_libraries(test_jpeg_dn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisi
 
 add_executable(test_jpeg_nosdk test/test_jpeg_nosdk.c hitiny/hitiny_venc_fd.c hitiny/hitiny_sys.c)
 target_link_libraries(test_jpeg_nosdk hisinad_aux)
-
-add_executable(test_jpeg_rgn test/test_jpeg_rgn.c aux/fonts/monaco32_fixedsize_rawbb_2bpp.c aux/fonts/render.c aux/fonts/utf8.c cfg/common.c platform/sdk_sys.c platform/sdk_audio.c platform/sdk_ugly.c platform/sdk_sensor.c platform/sdk_isp.c)
-target_link_libraries(test_jpeg_rgn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisinad_aux hisinad_cfg)
 
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
