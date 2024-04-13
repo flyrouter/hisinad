@@ -43,7 +43,7 @@ void tinydraw_renderer_save_bmp(tinydraw_renderer_ctx_t* ctx, const char* filena
     tinydraw_bmp_t bmp;
     memset(&bmp, 0, sizeof(tinydraw_bmp_t));
 
-    strcpy(bmp.fileheader.signature, "BM"); // fi.bfType    = 0x4D42;
+    memcpy(bmp.fileheader.signature, "BM", 2); // fi.bfType    = 0x4D42;
 
     bmp.fileheader.filesize = ctx->sz_buffer + sizeof(tinydraw_bmp_t);
     bmp.fileheader.fileoffset_to_pixelarray = sizeof(tinydraw_bmp_t);
@@ -57,7 +57,7 @@ void tinydraw_renderer_save_bmp(tinydraw_renderer_ctx_t* ctx, const char* filena
     bmp.bitmapinfoheader.imagesize = ctx->sz_buffer;
     bmp.bitmapinfoheader.ypixelpermeter = TINYDRAW_BMP_ypixelpermeter;
     bmp.bitmapinfoheader.xpixelpermeter = TINYDRAW_BMP_xpixelpermeter;
-    bmp.bitmapinfoheader.numcolorspallette = 0;
+    bmp.bitmapinfoheader.numcolorspallette = 32768;
 
     fwrite(&bmp, 1, sizeof(tinydraw_bmp_t), fp);
     fwrite(ctx->buffer, 1, ctx->sz_buffer, fp);

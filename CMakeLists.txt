@@ -28,6 +28,7 @@ target_link_libraries(test_cfg_sensor hisinad_cfg)
 
 add_executable(test_tinydraw_0 test/test_tinydraw_0.c tinydraw/image.c tinydraw/save_bmp.c)
 add_executable(test_tinydraw_1 test/test_tinydraw_1.c tinydraw/image.c tinydraw/save_bmp.c tinydraw/monaco32_fixedsize_rawbb_2bpp.c tinydraw/font.c)
+add_executable(test_tinydraw_2 test/test_tinydraw_2.c tinydraw/image.c tinydraw/save_bmp.c tinydraw/monaco32_fixedsize_rawbb_2bpp.c tinydraw/font.c)
 
 add_executable(test_pumap_vi test/test_pumap_vi.c pumap/vi.c)
 
@@ -54,6 +55,9 @@ target_link_libraries(test_jpeg_dn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisi
 
 add_executable(test_jpeg_nosdk test/test_jpeg_nosdk.c hitiny/hitiny_venc_fd.c hitiny/hitiny_sys.c)
 target_link_libraries(test_jpeg_nosdk hisinad_aux)
+
+add_executable(test_jpeg_rgn_nosdk test/test_jpeg_rgn_nosdk.c hitiny/hitiny_venc_fd.c hitiny/hitiny_sys.c hitiny/hitiny_region.c tinydraw/image.c tinydraw/save_bmp.c tinydraw/monaco32_fixedsize_rawbb_2bpp.c tinydraw/font.c)
+target_link_libraries(test_jpeg_rgn_nosdk hisinad_aux)
 
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
