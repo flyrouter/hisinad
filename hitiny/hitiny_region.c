@@ -79,6 +79,26 @@ int hitiny_MPI_RGN_DetachFrmChn(RGN_HANDLE Handle, const MPP_CHN_S *pstChn)
     return ioctl(g_rgn_fd, 0xC0105209, &param);
 }
 
+struct mpi_rgn_set_bitmap_s
+{
+    RGN_HANDLE Handle;
+    BITMAP_S bmp;
+};
+
+int hitiny_MPI_RGN_SetBitMap(RGN_HANDLE Handle, const BITMAP_S *pstBitmap)
+{
+    hitiny_region_init();
+
+    if (g_rgn_fd < 0) return 0xA0128010;
+    if (!pstBitmap) return 0xA0128006;
+
+    struct mpi_rgn_set_bitmap_s param;
+    param.Handle = Handle;
+    param.bmp = *pstBitmap;
+
+    return ioctl(g_rgn_fd, 0x40145204, &param);
+}
+
 int hitiny_MPI_RGN_Destroy(RGN_HANDLE Handle)
 {
     hitiny_region_init();

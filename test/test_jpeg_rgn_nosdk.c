@@ -311,6 +311,17 @@ void do_RGN_init(const tinydraw_renderer_ctx_t* my_bmp)
     if(HI_SUCCESS != s32Ret) {
         log_error("HI_MPI_RGN_AttachToChn (%d) failed with %#x!", RgnHandle,s32Ret);
     }
+
+    BITMAP_S bmp = {0};
+    bmp.enPixelFormat = PIXEL_FORMAT_RGB_1555;
+    bmp.u32Width = my_bmp->width;
+    bmp.u32Height = my_bmp->height;
+    bmp.pData = (HI_VOID*)my_bmp->buffer;
+
+    s32Ret = hitiny_MPI_RGN_SetBitMap(RgnHandle, &bmp);
+    if (HI_SUCCESS != s32Ret) {
+        printf("HI_MPI_RGN_SetBitMap failed with %#x!\n", s32Ret);
+    }
 }
 
 void do_RGN_done()
@@ -375,7 +386,6 @@ int main(int argc, char** argv)
     tinydraw_renderer_ctx_t td_ctx;
     tinydraw_renderer_ctx_init(&td_ctx, 1100, 80, 16);
 
-    tinydraw_renderer_draw_string(&td_ctx, 0, 0, &tinydraw_font_monaco32, "The quick brown fox jumps over the lazy dog.");
     char buf[64];
     struct tm tmloc;
     struct timeval tv;
@@ -383,6 +393,12 @@ int main(int argc, char** argv)
     localtime_r(&tv.tv_sec, &tmloc);
     snprintf(buf, 64, "%04u-%02u-%02u %02u:%02u:%02u", tmloc.tm_year + 1900, tmloc.tm_mon + 1, tmloc.tm_mday, tmloc.tm_hour, tmloc.tm_min, tmloc.tm_sec);
     tinydraw_renderer_draw_string(&td_ctx, 0, 40, &tinydraw_font_monaco32, buf);
+
+    td_ctx.font_draw_colors[0] = RED_COLOR;
+    td_ctx.font_draw_colors[1] = (YELLOW_COLOR / 4) & YELLOW_COLOR;
+    td_ctx.font_draw_colors[2] = (YELLOW_COLOR / 2) & YELLOW_COLOR;
+    td_ctx.font_draw_colors[3] = YELLOW_COLOR;
+    tinydraw_renderer_draw_string(&td_ctx, 0, 0, &tinydraw_font_monaco32, "The quick brown fox jumps over the lazy dog.");
 
     hitiny_MPI_VENC_Init();
     int s32Ret = hitiny_MPI_VENC_CreateGroup(0); // XXX
