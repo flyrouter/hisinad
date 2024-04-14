@@ -5,16 +5,19 @@
 
 typedef uint16_t tinydraw_color_t;
 
+#define RGB888_TO_RGB555(r,g,b)     (((((uint16_t)r) & 0b11111000) << 7) | ((((uint16_t)g) & 0b11111000) << 2) | (((uint16_t)b) >> 3))
+
 #define BLACK_COLOR             0x0000
 #define WHITE_COLOR             0xFFFF
 #define RED_COLOR               0xF800
-#define GREEN_COLOR             0x07E0
-#define BLUE_COLOR              0x001F
-#define CYAN_COLOR              0x07FF
+#define GREEN_COLOR             0x87E0
+#define BLUE_COLOR              0x801F
+#define CYAN_COLOR              0x87FF
 #define YELLOW_COLOR            0xFFE0
 #define PURPLE_COLOR            0xF81F
-#define LIGHT_GREY_COLOR        0xAD55
-#define DARK_GREY_COLOR         0x52AA
+#define LIGHT_GREY_COLOR        (0x8000 | RGB888_TO_RGB555(168, 168, 168))
+#define DARK_GREY_COLOR         (0x8000 | RGB888_TO_RGB555(96, 96, 96))
+
 
 #define DEFALT_BG_COLOR         BLACK_COLOR
 #define DEFALT_BRUSH_COLOR      WHITE_COLOR

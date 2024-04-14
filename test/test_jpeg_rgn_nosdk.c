@@ -392,9 +392,10 @@ int main(int argc, char** argv)
     gettimeofday(&tv, NULL);
     localtime_r(&tv.tv_sec, &tmloc);
     snprintf(buf, 64, "%04u-%02u-%02u %02u:%02u:%02u", tmloc.tm_year + 1900, tmloc.tm_mon + 1, tmloc.tm_mday, tmloc.tm_hour, tmloc.tm_min, tmloc.tm_sec);
+    td_ctx.font_draw_colors[0] = LIGHT_GREY_COLOR;//RGB888_TO_RGB555(200,200,200);
     tinydraw_renderer_draw_string(&td_ctx, 0, 40, &tinydraw_font_monaco32, buf);
 
-    td_ctx.font_draw_colors[0] = RED_COLOR;
+    td_ctx.font_draw_colors[0] = DARK_GREY_COLOR;//RGB888_TO_RGB555(200,200,200);
     td_ctx.font_draw_colors[1] = (YELLOW_COLOR / 4) & YELLOW_COLOR;
     td_ctx.font_draw_colors[2] = (YELLOW_COLOR / 2) & YELLOW_COLOR;
     td_ctx.font_draw_colors[3] = YELLOW_COLOR;
