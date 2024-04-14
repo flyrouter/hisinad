@@ -17,6 +17,12 @@ int hitiny_open_dev(const char* fname);
 void* hitiny_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size);
 int hitiny_MPI_SYS_Munmap(HI_VOID* pVirAddr, HI_U32 u32Size);
 
+int hitiny_MPI_SYS_MmzAlloc(HI_U32 *pu32PhyAddr, HI_VOID **ppVirtAddr, const HI_CHAR *strMmb, const HI_CHAR *strZone, HI_U32 u32Len);
+int hitiny_MPI_SYS_MmzAlloc_Cached(HI_U32 *pu32PhyAddr, HI_VOID **ppVirtAddr, const HI_CHAR *strMmb, const HI_CHAR *strZone, HI_U32 u32Len);
+int hitiny_MPI_SYS_MmzFree(HI_U32 u32PhyAddr, HI_VOID *pVirtAddr);
+int hitiny_MPI_SYS_MmzFlushCache(HI_U32 u32PhyAddr, HI_VOID *pVirtAddr, HI_U32 u32Size);
+
+
 
 #endif // __HITINY_SYS_H__
 

@@ -59,6 +59,12 @@ target_link_libraries(test_jpeg_nosdk hisinad_aux)
 add_executable(test_jpeg_rgn_nosdk test/test_jpeg_rgn_nosdk.c hitiny/hitiny_venc_fd.c hitiny/hitiny_sys.c hitiny/hitiny_region.c tinydraw/image.c tinydraw/save_bmp.c tinydraw/monaco32_fixedsize_rawbb_2bpp.c tinydraw/font.c)
 target_link_libraries(test_jpeg_rgn_nosdk hisinad_aux)
 
+add_executable(test_mmz_nosdk test/test_mmz.c hitiny/hitiny_sys.c)
+target_link_libraries(test_mmz_nosdk hisinad_aux)
+
+#add_executable(test_mmz_sdk test/test_mmz_sdk.c)
+#target_link_libraries(test_mmz_sdk ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisinad_aux)
+
 add_executable(tools_vi_dump tools/vi_dump.c)
 target_link_libraries(tools_vi_dump ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
