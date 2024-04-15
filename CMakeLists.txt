@@ -74,6 +74,9 @@ target_link_libraries(tools_vi_dump_nosdk hisinad_aux)
 add_executable(hisina-md-tune tools/hisina-md-tune/mjpeg_snap.c tools/hisina-md-tune/main.c hitiny/hitiny_sys.c hitiny/hitiny_vda.c cfg/vdacfg.c cfg/common.c hitiny/hitiny_venc_fd.c)
 target_link_libraries(hisina-md-tune evcurl hisinad_aux ${CURL_LIBRARY} libevx)
 
+add_executable(histodiffer tools/histodiffer.c hitiny/hitiny_vi.c hitiny/hitiny_sys.c hitiny/hitiny_ive.c)
+target_link_libraries(histodiffer hisinad_aux)
+
 add_executable(tools_vi_ive_hist tools/vi_ive_hist.c)
 target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
 
