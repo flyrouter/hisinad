@@ -12,6 +12,7 @@
 static int fd_SysDev = -1;
 static int fd_MemDev = -1;
 static int fd_MmzDev = -1;
+static int fd_IveDev = -1;
 
 int hitiny_MPI_SYS_Init()
 {
@@ -38,6 +39,12 @@ void hitiny_MPI_SYS_Done()
     {
         close(fd_MmzDev);
         fd_MmzDev = -1;
+    }
+
+    if (fd_IveDev != -1)
+    {
+        close(fd_IveDev);
+        fd_IveDev = -1;
     }
 
     if (fd_SysDev != -1)
@@ -161,6 +168,19 @@ int hitiny_open_dev(const char* fname)
     return fd;
 }
 
+int hitiny_ive_fd()
+{
+    if (fd_IveDev >= 0) return fd_IveDev;
+
+    int fd = hitiny_open_dev("/dev/ive");
+    if (fd >= 0)
+    {
+        fd_IveDev = fd;
+        return fd_IveDev;
+    }
+
+    return fd;
+}
 
 void* hitiny_MPI_SYS_Mmap(HI_U32 u32PhyAddr, HI_U32 u32Size)
 {
