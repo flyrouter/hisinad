@@ -668,7 +668,31 @@ static bool monaco32_lookup(utf8_char_t c, tinydraw_font_symbol_t *sym)
     int i = 0;
 
     // --- EDIT BEGIN
-    if(c == '!')
+    if(c >= '0' && c<= '9')
+    {
+        t = &monaco32_table[(c-'0')+13];
+    }
+    else if(c >= 'A' && c <= 'Z')
+    {
+        t = &monaco32_table[((c-'A')+30)];
+    }
+    else if(c >= 'a' && c <= 'z')
+    {
+        t = &monaco32_table[((c-'a')+61+1)];
+    }
+    else if(c == '-')
+    {
+        t = &monaco32_table[10];
+    }
+    else if(c == ':')
+    {
+        t = &monaco32_table[23]; // 10+12+1+1
+    }
+    else if(c > 127)
+    {
+        return false;
+    }
+    else if(c == '!')
     {
         t = &monaco32_table[0];
     }
@@ -708,10 +732,6 @@ static bool monaco32_lookup(utf8_char_t c, tinydraw_font_symbol_t *sym)
     {
         t = &monaco32_table[9];
     }
-    else if(c == '-')
-    {
-        t = &monaco32_table[10];
-    }
     else if(c == '.')
     {
         t = &monaco32_table[11];
@@ -719,14 +739,6 @@ static bool monaco32_lookup(utf8_char_t c, tinydraw_font_symbol_t *sym)
     else if(c == '/')
     {
         t = &monaco32_table[12];
-    }
-    else if(c >= '0' && c<= '9')
-    {
-        t = &monaco32_table[(c-'0')+13];
-    }
-    else if(c == ':')
-    {
-        t = &monaco32_table[23]; // 10+12+1+1
     }
     else if(c == ';')
     {
@@ -752,11 +764,6 @@ static bool monaco32_lookup(utf8_char_t c, tinydraw_font_symbol_t *sym)
     {
         t = &monaco32_table[29];
     }
-    else if(c >= 'A' && c <= 'Z')
-    {
-        t = &monaco32_table[((c-'A')+30)];
-    }
-
     else if(c == '[')
     {
         t = &monaco32_table[56];
@@ -780,10 +787,6 @@ static bool monaco32_lookup(utf8_char_t c, tinydraw_font_symbol_t *sym)
     else if(c == '`')
     {
         t = &monaco32_table[61];
-    }
-    else if(c >= 'a' && c <= 'z')
-    {
-        t = &monaco32_table[((c-'a')+61+1)];
     }
     else if(c == '{')
     {
