@@ -19,17 +19,17 @@
 #define MAX_FRM_CNT     256
 #define MAX_FRM_WIDTH   4096
 
-void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
+void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd_y, FILE *pfd_uv)
 {
     unsigned int w, h;
     char * pVBufVirt_Y;
     char * pVBufVirt_C;
     char * pMemContent;
-    unsigned char TmpBuff[MAX_FRM_WIDTH];                //如果这个值太小，图像很大的话存不了
+    unsigned char TmpBuff[MAX_FRM_WIDTH];
     HI_U32 phy_addr,size;
 	HI_CHAR *pUserPageAddr[2];
     PIXEL_FORMAT_E  enPixelFormat = pVBuf->enPixelFormat;
-    HI_U32 u32UvHeight;/* 存为planar 格式时的UV分量的高度 */
+    HI_U32 u32UvHeight;
 
     if (pVBuf->u32Width > MAX_FRM_WIDTH)
     {
@@ -69,9 +69,9 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
     for(h=0; h<pVBuf->u32Height; h++)
     {
         pMemContent = pVBufVirt_Y + h*pVBuf->u32Stride[0];
-        fwrite(pMemContent, pVBuf->u32Width, 1, pfd);
+        fwrite(pMemContent, pVBuf->u32Width, 1, pfd_y);
     }
-    fflush(pfd);
+    fflush(pfd_y);
 
 
     /* save U ----------------------------------------------------------------*/
@@ -88,9 +88,9 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
             TmpBuff[w] = *pMemContent;
             pMemContent += 2;
         }
-        fwrite(TmpBuff, pVBuf->u32Width/2, 1, pfd);
+        fwrite(TmpBuff, pVBuf->u32Width/2, 1, pfd_uv);
     }
-    fflush(pfd);
+    fflush(pfd_uv);
 
     /* save V ----------------------------------------------------------------*/
     fprintf(stderr, "V......");
@@ -104,9 +104,9 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
             TmpBuff[w] = *pMemContent;
             pMemContent += 2;
         }
-        fwrite(TmpBuff, pVBuf->u32Width/2, 1, pfd);
+        fwrite(TmpBuff, pVBuf->u32Width/2, 1, pfd_uv);
     }
-    fflush(pfd);
+    fflush(pfd_uv);
 
     fprintf(stderr, "done %d!\n", pVBuf->u32TimeRef);
     fflush(stderr);
@@ -114,17 +114,17 @@ void vi_dump_save_one_frame(VIDEO_FRAME_S * pVBuf, FILE *pfd)
     hitiny_MPI_SYS_Munmap(pUserPageAddr[0], size);
 }
 
-HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
+HI_S32 do_ViDump(VI_CHN ViChn)
 {
     HI_S32 i, s32Ret, j;
     VIDEO_FRAME_INFO_S stFrame;
-    VIDEO_FRAME_INFO_S astFrame[MAX_FRM_CNT];
-    HI_CHAR szYuvName[128];
+    HI_CHAR szYuv_Y_Name[128];
+    HI_CHAR szYuv_uv_Name[128];
     HI_CHAR szPixFrm[10];
-    FILE *pfd;
+    FILE *pfd_y;
+    FILE *pfd_uv;
 
     printf("\nNOTICE: This tool only can be used for TESTING !!!\n");
-    printf("usage: ./vi_dump [vichn] [frmcnt]. sample: ./vi_dump 0 5\n\n");
 
     if (hitiny_MPI_VI_SetFrameDepth(ViChn, 1))
     {
@@ -143,53 +143,38 @@ HI_S32 SAMPLE_MISC_ViDump(VI_CHN ViChn, HI_U32 u32Cnt)
     }
 
     /* make file name */
-    strcpy(szPixFrm,
-    (PIXEL_FORMAT_YUV_SEMIPLANAR_420 == stFrame.stVFrame.enPixelFormat)?"p420":"p422");
-    sprintf(szYuvName, "./vi_chn_%d_%d_%d_%s_%d.yuv", ViChn,
-        stFrame.stVFrame.u32Width, stFrame.stVFrame.u32Height,szPixFrm,u32Cnt);
-	printf("Dump YUV frame of vi chn %d  to file: \"%s\"\n", ViChn, szYuvName);
+    strcpy(szPixFrm, (PIXEL_FORMAT_YUV_SEMIPLANAR_420 == stFrame.stVFrame.enPixelFormat) ? "p420" : "p422");
+    sprintf(szYuv_Y_Name, "/tmp/vi_chn_%d_%d_%d_%s.y", ViChn, stFrame.stVFrame.u32Width, stFrame.stVFrame.u32Height, szPixFrm);
+    sprintf(szYuv_uv_Name, "/tmp/vi_chn_%d_%d_%d_%s.uv", ViChn, stFrame.stVFrame.u32Width, stFrame.stVFrame.u32Height, szPixFrm);
+	printf("Dump YUV frame of vi chn %d  to files: %s and %s\n", ViChn, szYuv_Y_Name, szYuv_uv_Name);
 
     err = hitiny_MPI_VI_ReleaseFrame(ViChn, &stFrame);
     printf("release frame err=%d (0 is OK)\n", err);
 
     /* open file */
-    pfd = fopen(szYuvName, "wb");
+    pfd_y = fopen(szYuv_Y_Name, "wb");
+    pfd_uv = fopen(szYuv_uv_Name, "wb");
 
-    if (NULL == pfd)
+    if (!pfd_y || !pfd_uv)
     {
+        printf("Can't open file for writing\n");
         return -1;
     }
 
-    /* get VI frame  */
-    for (i=0; i<u32Cnt; i++)
+    if (hitiny_MPI_VI_GetFrame(ViChn, &stFrame))
     {
-        if (hitiny_MPI_VI_GetFrame(ViChn, &astFrame[i])<0)
-        {
-            printf("get vi chn %d frame err\n", ViChn);
-            printf("only get %d frame\n", i);
-            break;
-        }
+       printf("get vi chn %d frame err\n", ViChn);
+       printf("only get %d frame\n", i);
+    }
+    else
+    {
+        vi_dump_save_one_frame(&(stFrame.stVFrame), pfd_y, pfd_uv);
+
+        hitiny_MPI_VI_ReleaseFrame(ViChn, &stFrame);
     }
 
-    for(j=0; j<i; j++)
-    {
-        /* save VI frame to file */
-        vi_dump_save_one_frame(&(astFrame[j].stVFrame), pfd);
-
-        /* release frame after using */
-        hitiny_MPI_VI_ReleaseFrame(ViChn, &astFrame[j]);
-
-        #if 0
-        if (astFrame[i].stVFrame.u32Width != stFrame.stVFrame.u32Width
-            || astFrame[i].stVFrame.u32Height != stFrame.stVFrame.u32Height)
-        {
-            printf("vi size has changed when frame %d, break\n",i);
-            break;
-        }
-        #endif
-    }
-
-    fclose(pfd);
+    fclose(pfd_y);
+    fclose(pfd_uv);
 
 	return 0;
 }
@@ -212,7 +197,7 @@ HI_S32 main(int argc, char *argv[])
     ret = hitiny_MPI_VI_SetFrameDepth(ViChn, 2);
     fprintf(stderr, "hitiny_MPI_VI_SetFrameDepth return 0x%x\n", ret);
 
-    SAMPLE_MISC_ViDump(ViChn, 1);
+    do_ViDump(ViChn);
 
     hitiny_MPI_VI_Done();
 
