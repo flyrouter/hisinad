@@ -83,7 +83,7 @@ target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat
 add_executable(tools_hi_vi_reg tools/hi_vireg.c platform/sdk_ugly.c)
 
 add_library(sns_imx225_i2c_720p SHARED imx225_i2c/imx225_cmos.c imx225_i2c/imx225_sensor_ctl.c)
-add_library(sns_imx225_i2c_960h SHARED imx225_i2c_960h/imx225_cmos.c imx225_i2c_960h/imx225_sensor_ctl.c)
+add_library(sns_imx225_i2c_960p SHARED imx225_i2c_960h/imx225_cmos.c imx225_i2c_960h/imx225_sensor_ctl.c)
 add_library(sns_imx225_spi_720p SHARED imx225_spi/imx225_cmos.c imx225_spi/imx225_sensor_ctl.c)
 add_library(sns_jxh42_i2c SHARED jxh42_i2c/jxh42_sensor_ctl.c jxh42_i2c/jxh42_cmos.c)
 

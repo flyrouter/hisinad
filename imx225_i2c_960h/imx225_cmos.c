@@ -39,7 +39,7 @@ static HI_BOOL gsbRegInit = HI_FALSE;
 #define GAIN_PRECISE 0.1
 #define GAIN_TBL_SIZE 721 /* (SNS_GAIN_MAX / GAIN_PRECISE + 1) */
 
-#define FULL_LINES_DEFAULT 750
+#define FULL_LINES_DEFAULT 1100
 #define FULL_LINES_25FPS 900
 #define FPS30 30
 #define FPS25 25 
@@ -334,7 +334,7 @@ static HI_S32 cmos_get_ae_default(AE_SENSOR_DEFAULT_S *pstAeSnsDft)
         return -1;
     }
 
-    gu32FullLinesStd = 1100;// XXX: FULL_LINES_DEFAULT;
+    gu32FullLinesStd = FULL_LINES_DEFAULT;
     
     pstAeSnsDft->au8HistThresh[0] = 0xd;
     pstAeSnsDft->au8HistThresh[1] = 0x28;
@@ -343,13 +343,13 @@ static HI_S32 cmos_get_ae_default(AE_SENSOR_DEFAULT_S *pstAeSnsDft)
     
     pstAeSnsDft->u8AeCompensation = 0x40;
     
-    pstAeSnsDft->u32LinesPer500ms = 16500; // XXX: FULL_LINES_DEFAULT * FPS30 / 2;
+    pstAeSnsDft->u32LinesPer500ms = FULL_LINES_DEFAULT * FPS30 / 2;
     pstAeSnsDft->u32FullLinesStd = gu32FullLinesStd;
     pstAeSnsDft->u32FlickerFreq = 0;
 
     pstAeSnsDft->stIntTimeAccu.enAccuType = AE_ACCURACY_LINEAR;
     pstAeSnsDft->stIntTimeAccu.f32Accuracy = 1.0;
-    pstAeSnsDft->u32MaxIntTime = 1099; // XXX: FULL_LINES_DEFAULT - 1;
+    pstAeSnsDft->u32MaxIntTime = FULL_LINES_DEFAULT - 1;
     pstAeSnsDft->u32MinIntTime = 3;    
     pstAeSnsDft->u32MaxIntTimeTarget = 65535;
     pstAeSnsDft->u32MinIntTimeTarget = 3;
@@ -480,7 +480,7 @@ static HI_VOID cmos_init_regs_info(HI_VOID)
 static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
 {
     HI_U32 u32Value = gu32FullLines - u32IntTime - 1;
-    
+    //fprintf(stderr, "SET EXP %u\n", u32Value); 
 
 #if CMOS_IMX225_ISP_WRITE_SENSOR_ENABLE
     cmos_init_regs_info();
