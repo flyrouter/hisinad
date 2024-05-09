@@ -63,7 +63,7 @@ static HI_S32 cmos_get_ae_default(AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 
     pstAeSnsDft->u8AeCompensation = 0x40;
 
-    pstAeSnsDft->u32LinesPer500ms = 11265; // FULL_LINES_DEFAULT * FPS30 / 2
+    pstAeSnsDft->u32LinesPer500ms = FULL_LINES_DEFAULT * 15; //FULL_LINES_DEFAULT * FPS30 >> 1;
     pstAeSnsDft->u32FullLinesStd = gu32FullLinesStd;
     pstAeSnsDft->u32FlickerFreq = 0;
 
@@ -160,6 +160,7 @@ void cmos_set_3Ddenoise(HI_U32 sf, HI_U32 tf, HI_U32 chroma)
     VPSS_GRP_PARAM_S grp_param;
 
     HI_MPI_VPSS_GetGrpParam(0, &grp_param);
+    //fprintf(stderr, "was sf/tf/chroma: %u/%u/%u\n", grp_param.u32SfStrength, grp_param.u32TfStrength, grp_param.u32ChromaRange);
     grp_param.u32SfStrength = sf;
     grp_param.u32TfStrength = tf;
     grp_param.u32ChromaRange = chroma;
@@ -214,6 +215,8 @@ static HI_VOID cmos_inttime_update(HI_U32 u32IntTime)
 
 static unsigned char additional_gain_vals[4] = { 0, 0x10, 0x20, 0x30 };
 
+static HI_U32 prev_gain_value = 0;
+
 static HI_VOID cmos_gains_update(HI_U32 u32Again, HI_U32 u32Dgain)
 {
     //fprintf(stderr, "DBG: cmos_gains_update(%u, %u)\n", u32Again, u32Dgain);
@@ -223,8 +226,22 @@ static HI_VOID cmos_gains_update(HI_U32 u32Again, HI_U32 u32Dgain)
     {
         new_gain_value |= additional_gain_vals[u32Again];
     }
-    //fprintf(stderr, "DBG: podsovyvaem 0x%u gain\n", new_gain_value);
-    sensor_write_register(0x0, new_gain_value);
+
+    if (prev_gain_value != new_gain_value)
+    {
+        prev_gain_value = new_gain_value;
+        fprintf(stderr, "DBG: podsovyvaem 0x%u gain\n", new_gain_value);
+        sensor_write_register(0x0, new_gain_value);
+    }
+
+    ISP_AE_ATTR_EX_S stAEAttrEx;
+    HI_MPI_ISP_GetAEAttrEx(&stAEAttrEx);
+    if (stAEAttrEx.enAEStrategyMode == AE_EXP_HIGHLIGHT_PRIOR)
+    {
+        fprintf(stderr, "UGLY HACK: switch enAEStrategyMode to %u\n", stAEAttrEx.enAEStrategyMode);
+        stAEAttrEx.enAEStrategyMode = AE_EXP_LOWLIGHT_PRIOR;
+        HI_MPI_ISP_SetAEAttrEx(&stAEAttrEx);
+    }
 }
 
 void sensor_global_init()
