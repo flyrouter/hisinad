@@ -230,8 +230,22 @@ static HI_VOID cmos_gains_update(HI_U32 u32Again, HI_U32 u32Dgain)
     if (prev_gain_value != new_gain_value)
     {
         prev_gain_value = new_gain_value;
-        fprintf(stderr, "DBG: podsovyvaem 0x%u gain\n", new_gain_value);
+        //fprintf(stderr, "DBG: podsovyvaem 0x%u gain\n", new_gain_value);
         sensor_write_register(0x0, new_gain_value);
+
+        ISP_DENOISE_ATTR_S DenoiseAttr;
+        HI_MPI_ISP_GetDenoiseAttr(&DenoiseAttr);
+        if (new_gain_value >=60)
+        {
+            DenoiseAttr.u8ThreshTarget = 55;
+            DenoiseAttr.bManualEnable = HI_TRUE;
+        }
+        else
+        {
+            DenoiseAttr.bManualEnable = HI_FALSE;
+        }
+
+        HI_MPI_ISP_SetDenoiseAttr(&DenoiseAttr);
     }
 
     ISP_AE_ATTR_EX_S stAEAttrEx;
@@ -451,6 +465,7 @@ HI_S32 cmos_init_ae_exp_function(AE_SENSOR_EXP_FUNC_S *pstExpFuncs)
 
 static AWB_CCM_S g_stAwbCcm =
 {
+/*
     4930,
     {
         0x1A3, 0x8073, 0x8030,
@@ -469,7 +484,14 @@ static AWB_CCM_S g_stAwbCcm =
         0x8072, 0x19D, 0x802B,
         0x80B3, 0x8366, 0x519,
     }
+*/
 
+    5082,
+    { 0x1E7, 0x80E2, 0x8005, 0x8026, 0x181, 0x805B, 0x3, 0x80FF, 0x1FB },
+    3335,
+    { 0x1A8, 0x8091, 0x8017, 0x8064, 0x19A, 0x8036, 0x8028, 0x812D, 0x255 },
+    2525,
+    { 0x122, 0x25, 0x8048, 0x8073, 0x196, 0x8023, 0x808D, 0x8217, 0x3A4 }
 };
 
 static AWB_AGC_TABLE_S g_stAwbAgcTable =
