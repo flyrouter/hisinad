@@ -521,10 +521,18 @@ static HI_S32 cmos_get_awb_default(AWB_SENSOR_DEFAULT_S *pstAwbSnsDft)
     pstAwbSnsDft->au16GainOffset[2] = 0x100;
     pstAwbSnsDft->au16GainOffset[3] = 0x199;
 
-    pstAwbSnsDft->as32WbPara[0] = 99;
-    pstAwbSnsDft->as32WbPara[1] = 47;
-    pstAwbSnsDft->as32WbPara[2] = -110;
-    pstAwbSnsDft->as32WbPara[3] = 152677;
+// prev params
+//    pstAwbSnsDft->as32WbPara[0] = 99;
+//    pstAwbSnsDft->as32WbPara[1] = 47;
+//    pstAwbSnsDft->as32WbPara[2] = -110;
+//    pstAwbSnsDft->as32WbPara[3] = 152677;
+//    pstAwbSnsDft->as32WbPara[4] = 128;
+//    pstAwbSnsDft->as32WbPara[5] = -104036;
+
+    pstAwbSnsDft->as32WbPara[0] = 117;
+    pstAwbSnsDft->as32WbPara[1] = 0;
+    pstAwbSnsDft->as32WbPara[2] = -138;
+    pstAwbSnsDft->as32WbPara[3] = 175484;
     pstAwbSnsDft->as32WbPara[4] = 128;
     pstAwbSnsDft->as32WbPara[5] = -104036;
 
