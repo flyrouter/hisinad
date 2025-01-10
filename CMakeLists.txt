@@ -82,11 +82,14 @@ target_link_libraries(tools_vi_ive_hist ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat
 
 add_executable(tools_hi_vi_reg tools/hi_vireg.c platform/sdk_ugly.c)
 
+add_executable(tool_pwm1 tools/pwm1_manager.c)
+
 add_library(sns_imx225_i2c_720p SHARED imx225_i2c/imx225_cmos.c imx225_i2c/imx225_sensor_ctl.c)
 add_library(sns_imx225_i2c_960p SHARED imx225_i2c_960h/imx225_cmos.c imx225_i2c_960h/imx225_sensor_ctl.c)
 add_library(sns_imx225_spi_720p SHARED imx225_spi/imx225_cmos.c imx225_spi/imx225_sensor_ctl.c)
 add_library(sns_jxh42_i2c SHARED jxh42_i2c/jxh42_sensor_ctl.c jxh42_i2c/jxh42_cmos.c)
 add_library(sns_jxh22_i2c SHARED jxh22_i2c/jxh22_sensor_ctl.c jxh22_i2c/jxh22_cmos.c)
+#add_library(sns_sc2135_i2c SHARED sc2135/sc2135_sensor_ctl.c sc2135/sc2135_cmos.c)
 
 add_executable(sample_audio test/sample_audio/sample_audio.c test/sample_audio/sample_comm_audio.c test/sample_audio/sample_comm_sys.c platform/sdk_ugly.c)
 target_link_libraries(sample_audio ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat)
