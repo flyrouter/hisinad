@@ -50,6 +50,9 @@ target_link_libraries(test_jpeg ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisinad
 add_executable(test_md test/test_md.c cfg/common.c hitiny/hitiny_sys.c hitiny/hitiny_vda.c)
 target_link_libraries(test_md hisinad_aux)
 
+add_executable(test_vi_ext test/test_vi_ext.c hitiny/hitiny_vi.c cfg/common.c)
+target_link_libraries(test_vi_ext hisinad_aux hisinad_cfg)
+
 add_executable(test_jpeg_dn test/test_jpeg_dn.c cfg/common.c platform/sdk_sys.c platform/sdk_audio.c platform/sdk_ugly.c platform/sdk_sensor.c platform/sdk_isp.c)
 target_link_libraries(test_jpeg_dn ${VENDOR_SDK_LIBRARIES} gcc_s hisicompat hisinad_aux hisinad_cfg)
 

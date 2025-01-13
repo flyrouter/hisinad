@@ -6,6 +6,12 @@
 void hitiny_MPI_VI_Init();
 void hitiny_MPI_VI_Done();
 
+int hitiny_MPI_VI_SetExtChnAttr(VI_CHN ViChn, const VI_EXT_CHN_ATTR_S *pstExtChnAttr);
+int hitiny_MPI_VI_GetExtChnAttr(VI_CHN ViChn, VI_EXT_CHN_ATTR_S *pstExtChnAttr);
+
+int hitiny_MPI_VI_EnableChn(VI_CHN ViChn);
+int hitiny_MPI_VI_DisableChn(VI_CHN ViChn);
+
 int hitiny_MPI_VI_GetFd(VI_CHN ViChn);
 
 int hitiny_MPI_VI_GetFrame(VI_CHN ViChn, VIDEO_FRAME_INFO_S *pstFrameInfo);

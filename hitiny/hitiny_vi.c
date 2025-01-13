@@ -86,6 +86,33 @@ int hitiny_MPI_VI_GetFd(VI_CHN ViChn)
     return fd;
 }
 
+int hitiny_MPI_VI_SetExtChnAttr(VI_CHN ViChn, const VI_EXT_CHN_ATTR_S *pstExtChnAttr)
+{
+    int fd = hitiny_MPI_VI_GetFd(ViChn);
+
+    if (fd < 0) return fd;
+
+    return ioctl(fd, 0x40184930, pstExtChnAttr);
+}
+
+int hitiny_MPI_VI_EnableChn(VI_CHN ViChn)
+{
+    int fd = hitiny_MPI_VI_GetFd(ViChn);
+
+    if (fd < 0) return fd;
+
+    return ioctl(fd, 0x490e);
+}
+
+int hitiny_MPI_VI_DisableChn(VI_CHN ViChn)
+{
+    int fd = hitiny_MPI_VI_GetFd(ViChn);
+
+    if (fd < 0) return fd;
+
+    return ioctl(fd, 0x490f);
+}
+
 int hitiny_MPI_VI_GetFrame(VI_CHN ViChn, VIDEO_FRAME_INFO_S *pstFrameInfo)
 {
     int fd = hitiny_MPI_VI_GetFd(ViChn);
